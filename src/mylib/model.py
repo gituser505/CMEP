@@ -4,7 +4,7 @@ import keras as k
 from keras import ops, losses, metrics, layers, Model, Input, optimizers
 from keras import saving
 
-from mylib.layers import Sampling, FiLM, PeriodicPadding2D, PeriodicPadding2dStrided
+from mylib.layers import Sampling, FiLMLayer, PeriodicPadding2D, PeriodicPadding2DStrided
 
 
 @saving.register_keras_serializable(package="mylib")
