@@ -4,6 +4,8 @@ import keras as k
 from keras import ops, losses, metrics, layers, Model, Input, optimizers
 from keras import saving
 
+from mylib.layers import Sampling, FiLM, PeriodicPadding2D, PeriodicPadding2dStrided
+
 
 @saving.register_keras_serializable(package="mylib")
 class CVAE(Model):
