@@ -10,13 +10,13 @@ from datetime import datetime
 
 import numpy as np
 import optuna # NEW IMPORT
-from optuna.integration import TFKerasPruningCallback # NEW IMPORT
+from optuna.integration import TFKerasPruningCallback
 
 from keras.optimizers import Adam, AdamW, Nadam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-from projectlib.dataloader import IsingDataLoader
-from projectlib.model_padded import CVAE
+from mylib.dataloader import IsingDataLoader
+from mylib.model import CVAE
 
 ROOT = Path(__file__).parent.parent
 
@@ -67,7 +67,6 @@ def objective(trial, base_config, train_data, val_data):
         min_lr=1e-7)
     
     pruning = TFKerasPruningCallback(trial, monitor='val_unweighted_loss')
-    
     callbacks = [early_stop, reduce_lr, pruning]
     
     # Train model
