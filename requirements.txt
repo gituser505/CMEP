@@ -1,0 +1,8 @@
+keras
+matplotlib
+numba
+numpy
+pandas
+scikit_learn
+tensorflow[and-cuda]
+sphinx
