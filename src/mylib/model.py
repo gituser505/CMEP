@@ -4,7 +4,7 @@ import keras as k
 from keras import ops, losses, metrics, layers, Model, Input, optimizers
 from keras import saving
 
-from mylib.layers import Sampling, FiLMLayer, PeriodicPadding2D, PeriodicPadding2DStrided
+from mylib.layers import Sampling, FiLMLayer, PeriodicPadding2D
 
 
 @saving.register_keras_serializable(package="mylib")
@@ -38,13 +38,10 @@ class CVAE(Model):
         x_cnn = layers.Concatenate(axis=-1)([spins_in, beta_spatial])
 
         for i, (f,k,s) in enumerate( zip(self.enc_filters, self.kernels, self.strides) ):
-            #x_cnn = PeriodicPadding2D(k//2)(x_cnn)
-            #x_cnn = layers.Conv2D(f,k, padding='same', use_bias=False, name=f'enc_conv_{i}')(x_cnn)
-            #x_cnn = PeriodicPadding2DStrided(k,s)(x_cnn)
+            #x_cnn = PeriodicPadding2D(k,s)(x_cnn)
             x_cnn = layers.Conv2D(f,k,s, padding='same', use_bias=False, name=f'enc_conv_{i}')(x_cnn)
             x_cnn = layers.BatchNormalization()(x_cnn)
             x_cnn = layers.LeakyReLU(self.lrlu_slope)(x_cnn)
-            #x_cnn = layers.Activation('relu')(x_cnn)
             #x_cnn = layers.MaxPooling2D(pool_size=s, strides=s, padding='same', name=f'enc_pool_{i}')(x_cnn)
 
         self.enc_cnn_out_shape = x_cnn.shape[1:]
@@ -54,7 +51,6 @@ class CVAE(Model):
             x_latent = layers.Dense(units, use_bias=False, name=f'enc_mlp_{i}')(x_latent)
             x_latent = layers.BatchNormalization()(x_latent)
             x_latent = layers.LeakyReLU(self.lrlu_slope)(x_latent)
-            #x_latent = layers.Activation('relu')(x_latent)
 
         z_mean = layers.Dense(self.latent_dim, name='z_mean')(x_latent)
         z_log_var = layers.Dense(self.latent_dim, name='z_log_var')(x_latent)
@@ -73,20 +69,17 @@ class CVAE(Model):
             x = layers.Dense(units, use_bias=False, name=f'dec_mlp_{i}')(x)
             x = layers.BatchNormalization()(x)
             x = layers.LeakyReLU(self.lrlu_slope)(x)
-            #x = layers.Activation('relu')(x)
         x = layers.Dense(cnn_units, name='dec_mlp')(x)        
         x_cnn = layers.Reshape(self.enc_cnn_out_shape)(x)
 
         for i, (f,s,k) in enumerate( zip(self.dec_filters, reversed(self.strides), reversed(self.kernels)) ):
             #x_cnn = layers.UpSampling2D(s, interpolation="nearest")(x_cnn)
-            #x_cnn = PeriodicPadding2D(k//2)(x_cnn)
-            #x_cnn = layers.Conv2D(f, k, padding='valid', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
-            #x_cnn = PeriodicPadding2DStrided(k,s)(x_cnn)
+            #x_cnn = PeriodicPadding2D(k,s)(x_cnn)
             x_cnn = layers.Conv2DTranspose(f,k,s, padding='same', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
+            #x_cnn = layers.Conv2D(f, k, padding='valid', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
             x_cnn = layers.BatchNormalization()(x_cnn)
             x_cnn = FiLMLayer(f)([x_cnn, beta])
             x_cnn = layers.LeakyReLU(self.lrlu_slope)(x_cnn)
-            #x_cnn = layers.Activation('relu')(x_cnn)
         spins_out = layers.Conv2D(1, 1, name='dec_out')(x_cnn)
         
         return Model([latent_space, beta], spins_out, name='decoder')
