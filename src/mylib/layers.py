@@ -2,6 +2,7 @@ import keras as k
 from keras import ops, layers
 from keras import saving
 
+
 @saving.register_keras_serializable(package="mylib")
 class Sampling(layers.Layer):
     def __init__(self, seed=42, **kwargs):
