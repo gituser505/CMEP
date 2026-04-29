@@ -13,9 +13,9 @@ from keras.models import load_model
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 
-from projectlib.dataloader import IsingDataLoader
-from projectlib.model_padded import CVAE
-from projectlib.observables import *
+from mylib.dataloader import IsingDataLoader
+from mylib.model_padded import CVAE
+from mylib.observables import *
 
 ROOT = Path(__file__).parent.parent
 
@@ -32,16 +32,19 @@ if __name__ == "__main__":
 
     results_dir = ROOT/"results"/args.dir
 
+    # Load config
     with open(results_dir/"config.json", 'r') as f:
         config = json.load(f)
 
+    # Unpack config
     L = config['hyperparams']['L']
     N = config['train_params']['N']
     data_dir = config['train_params']['data_dir']
 
     spins_file = ROOT/"data"/data_dir/"lattice_samples.bin"
     betas_file = ROOT/"data"/data_dir/"beta_labels.bin"   
- 
+
+    # Get Ising data
     loader = IsingDataLoader(spins_file, betas_file, L, N)
     
     all_indices = np.arange(N)
@@ -54,8 +57,10 @@ if __name__ == "__main__":
     M_ising, E_ising = get_observable_arrays(spins, betas)
     obs_ising = get_observables(M_ising, E_ising, L)
 
+    # Load model
     cvae = load_model(results_dir/"cvae.keras")
 
+    # Generate new data from model; batch manually becuae of @tf.function(jit_compile=True)
     batch_size = 5000
     spins_cvae_list = []
 
@@ -93,12 +98,12 @@ if __name__ == "__main__":
     spins_pca = loader.get_spins(indices_pca)
     betas_pca = loader.get_betas(indices_pca)
 
-    M_pca = 2*np.mean(spins_pca, axis=(1,2)) - 1
+    M_pca = magnetization(spins_pca)
     E_pca = energy(spins_pca)
-    
+
+    # Resahpe for CVAE inputs
     betas_norm_pca_input = norm_array(betas_pca).reshape(-1,1)
     spins_pca_input = spins_pca.reshape((-1,L,L,1)).astype(np.float32)
-
     z_mean, _, _ = cvae.encoder.predict([spins_pca_input, betas_norm_pca_input])
 
     pca = PCA()
@@ -154,7 +159,6 @@ if __name__ == "__main__":
     plt.savefig(results_dir / "pca_vs_physics.png")
     
     
-
     # --- PLOT 3: Observables ---
     configs = [
         ("Magnetization", r"$|M|$", (0, 1.1), r"$\beta$", (0, 0.9)),
