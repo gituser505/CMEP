@@ -86,10 +86,10 @@ if __name__ == "__main__":
         patience=5, 
         min_lr=1e-7 )
 
-    #tau_callback = GumbelSoftmaxAnnealing(init_tau=1.0, min_tau=0.1, decay_rate=0.95)
-    #physical_loss = PhysicalLossScheduler(start_epoch=5)
+    #tau_annealer = GumbelSoftmaxAnnealing(init_tau=1.0, min_tau=0.1, decay_rate=0.95)
+    #physical_loss = PhysicalLossScheduler(start_epoch=25)
     history_csv = CSVLogger(exp_dir/f"history.csv", append=True)
-    callbacks = [early_stop, reduce_lr, history_csv] #, physical_loss, tau_callback]
+    callbacks = [early_stop, reduce_lr, history_csv] #, physical_loss, tau_annealer]
 
     # Run training
     history = cvae.fit(
