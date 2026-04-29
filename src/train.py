@@ -14,52 +14,23 @@ import keras as k
 from keras.optimizers import Adam, AdamW, Nadam, SGD
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, CSVLogger
 
-from projectlib.dataloader import IsingDataLoader
-from projectlib.model_padded import CVAE
+from mylib.callbacks import GumbelSoftmaxAnnealing, PhysicsLossScheduler
+from mylib.dataloader import IsingDataLoader
+from mylib.model_padded import CVAE
 
 ROOT = Path(__file__).parent.parent
-
-
-class GumbelSoftmaxAnnealing(k.callbacks.Callback):
-    """
-    Info
-    """
-    def __init__(self, init_tau=1.0, min_tau=0.1, decay_rate=0.95):
-        super().__init__()
-        self.init_tau = init_tau
-        self.min_tau = min_tau
-        self.decay_rate = decay_rate
-
-    def on_epoch_end(self, epoch, logs=None):
-        new_tau = max(self.min_tau, self.init_tau * (self.decay_rate ** (epoch + 1)))
-        self.model.tau.assign(new_tau) 
-        print(f" - tau annealed to: {new_tau:.4f}")
-
-
-class PhysicalLossScheduler(k.callbacks.Callback):
-    """
-    Info
-    """
-    def __init__(self, start_epoch):
-        super().__init__()
-        self.start_epoch = start_epoch
-
-    def on_epoch_begin(self, epoch, logs=None): 
-        if epoch == self.start_epoch:
-            self.model.gamma.assign(self.model.target_gamma)
-            self.model.delta.assign(self.model.target_delta)
-            print(f"\n*** EPOCH {epoch + 1}: Physical losses (M & E) are now ACTIVE! ***\n")
-
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Train CVAE model')
     parser.add_argument('--config', required=True, help='Name of JSON file')
     args = parser.parse_args()
-    
+
+    # Load config
     with open(ROOT/"config"/args.config, 'r') as f:
         config = json.load(f)
 
+    # Unpack config dictionary
     hp = config['hyperparams']
     tp = config['train_params']
     
@@ -78,6 +49,7 @@ if __name__ == "__main__":
     augment = tp['augment']
     data_dir = tp['data_dir']   
 
+    # Generate unique results string and direcrtory
     timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     config_str = f"cvae_{latent_dim}_{enc_filters}_{mlp_units}_{alpha}_{batch_size}".replace(" ","")
     config_str = config_str + f"_{timestamp}"
@@ -85,18 +57,22 @@ if __name__ == "__main__":
     exp_dir = ROOT/"results"/data_dir/config_str
     exp_dir.mkdir(parents=True, exist_ok=True)
 
+    # Save config 
     with open(exp_dir/"config.json", 'w') as f:
         json.dump(config, f, indent=2)
 
+    # Load Ising dataset
     spins_file = ROOT/"data"/data_dir/"lattice_samples.bin"
     betas_file = ROOT/"data"/data_dir/"beta_labels.bin"
     
     loader = IsingDataLoader(spins_file, betas_file, L, N)
     train_data, val_data = loader.get_training_data(split_ratio, batch_size, augment=True)
-    
+
+    # Instantiate model and compile
     cvae = CVAE(hp)
     cvae.compile( Adam(learning_rate), jit_compile=True )
 
+    # Callbacks
     early_stop = EarlyStopping(
         monitor='val_total_loss', 
         mode='min',
@@ -110,20 +86,12 @@ if __name__ == "__main__":
         patience=5, 
         min_lr=1e-7 )
 
-    checkpoint = ModelCheckpoint(
-        str(exp_dir/f"cvae.keras"), 
-        save_best_only=True,
-        save_weights_only=False, 
-        save_freq='epoch', 
-        verbose=0)
-
-    #tau_callback = TemperatureAnnealing(init_tau=1.0, min_tau=0.1, decay_rate=0.95)
-    physical_loss = PhysicalLossScheduler(start_epoch=5)
-    
+    #tau_callback = GumbelSoftmaxAnnealing(init_tau=1.0, min_tau=0.1, decay_rate=0.95)
+    #physical_loss = PhysicalLossScheduler(start_epoch=5)
     history_csv = CSVLogger(exp_dir/f"history.csv", append=True)
-    
-    callbacks = [early_stop, reduce_lr, history_csv, checkpoint, physical_loss] #, tau_callback]
-    
+    callbacks = [early_stop, reduce_lr, history_csv] #, physical_loss, tau_callback]
+
+    # Run training
     history = cvae.fit(
         x=train_data,
         validation_data=val_data,
@@ -131,8 +99,10 @@ if __name__ == "__main__":
         callbacks=callbacks,
         verbose=2 )
 
+    # Save model and weights to results
     cvae.save(str(exp_dir/f"cvae.keras"))
     print(f"\nSaved to: {exp_dir}")
 
+    # Save unique results path to temp for easy lookup
     with open(".latest_run.txt", "w") as f:
         f.write(str(exp_dir))
