@@ -5,7 +5,7 @@ from keras import ops, losses, metrics, layers, Model, Input, optimizers
 from keras import saving
 
 from mylib.layers import Sampling, FiLMLayer, PeriodicPadding2D
-
+from mylib.observables import magnetization, energy
 
 @saving.register_keras_serializable(package="mylib")
 class CVAE(Model):
@@ -139,16 +139,6 @@ class CVAE(Model):
             uniform = k.random.uniform(ops.shape(spins_probs))
             spins = ops.cast(uniform < spins_probs, "int8")
         return spins
-    
-    def magnetization(self, spins):
-        M = ops.mean(spins, axis=[1, 2]) 
-        return 2*M - 1
-
-    def energy(self, spins, J=1.0):
-        s = 2.0 * spins - 1.0  
-        right = ops.roll(s, shift=-1, axis=2)
-        down = ops.roll(s, shift=-1, axis=1)
-        return -J * ops.mean(s * (right + down), axis=[1, 2])
 
     @property
     def metrics(self):
