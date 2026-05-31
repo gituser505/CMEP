@@ -1,35 +1,73 @@
+
+
 <!DOCTYPE html>
+<html class="writer-html5" lang="y" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mylib.observables &mdash; CMEP project 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
-<html lang="y" data-content_root="../../">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mylib.observables &#8212; CMEP project 1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
-    <script src="../../_static/documentation_options.js?v=be683c08"></script>
-    <script src="../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=be683c08"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
-   
-  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-  
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
 
-  
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
           
+          
+          <a href="../../index.html" class="icon icon-home">
+            CMEP project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
 
-          <div class="body" role="main">
-            
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CMEP project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mylib.observables</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <h1>Source code for mylib.observables</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numba</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -41,6 +79,21 @@
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.jackknife_samples">[docs]</a>
 <span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">jackknife_samples</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates jackknife samples for mean, variance, and Binder cumulant.</span>
+
+<span class="sd">    This function calculates the &quot;leave-one-out&quot; jackknife estimates for the </span>
+<span class="sd">    first, second, and fourth moments of a given dataset, which are then used </span>
+<span class="sd">    to calculate the sample mean, variance, and Binder cumulant.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (numpy.ndarray): 1D array of observable data (e.g., magnetization or energy).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple containing three 1D numpy arrays:</span>
+<span class="sd">            - jk_mean: Jackknife samples of the mean.</span>
+<span class="sd">            - jk_var: Jackknife samples of the variance.</span>
+<span class="sd">            - jk_bc: Jackknife samples of the Binder cumulant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="n">jk_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
     <span class="n">jk_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
@@ -68,6 +121,20 @@
 <div class="viewcode-block" id="jackknife">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.jackknife">[docs]</a>
 <span class="k">def</span> <span class="nf">jackknife</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the standard error of observables using Jackknife resampling.</span>
+
+<span class="sd">    The standard error is computed using the jackknife variance formula:</span>
+<span class="sd">    $\epsilon = \sqrt{(n-1) \text{Var}(\text{samples})}$.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (numpy.ndarray): 1D array of raw measurements.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple containing the standard errors (float) for:</span>
+<span class="sd">            - mean_err: Error of the mean.</span>
+<span class="sd">            - var_err: Error of the variance.</span>
+<span class="sd">            - bc_err: Error of the Binder cumulant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="n">jk_means</span><span class="p">,</span> <span class="n">jk_vars</span><span class="p">,</span> <span class="n">jk_bcs</span> <span class="o">=</span> <span class="n">jackknife_samples</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="n">mean_err</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">jk_means</span><span class="p">))</span>
@@ -80,6 +147,16 @@
 <div class="viewcode-block" id="magnetization">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.magnetization">[docs]</a>
 <span class="k">def</span> <span class="nf">magnetization</span><span class="p">(</span><span class="n">spins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the absolute magnetization per spin of a lattice.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spins (numpy.ndarray): 3D array of spin configurations with shape </span>
+<span class="sd">            `(batch_size, L, L)` containing values of 0 or 1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: 1D array of absolute magnetization values for each lattice </span>
+<span class="sd">        in the batch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">M</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
 
@@ -88,6 +165,20 @@
 <div class="viewcode-block" id="energy">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.energy">[docs]</a>
 <span class="k">def</span> <span class="nf">energy</span><span class="p">(</span><span class="n">spins</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the energy per spin of a 2D square Ising lattice.</span>
+
+<span class="sd">    Computes the standard nearest-neighbor Ising Hamiltonian with periodic </span>
+<span class="sd">    boundary conditions: </span>
+<span class="sd">    $E = -J \sum_{\langle i, j \rangle} s_i s_j$.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spins (numpy.ndarray): 3D array of spin configurations with shape </span>
+<span class="sd">            `(N, L, L)` containing values of 0 or 1.</span>
+<span class="sd">        J (float, optional): The ferromagnetic coupling constant. Defaults to 1.0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: 1D array of energy values per spin for each lattice.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">s</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">spins</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># Convert to spin ±1</span>
     <span class="n">right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">shift</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">shift</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -98,6 +189,18 @@
 <div class="viewcode-block" id="binder_cumulant">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.binder_cumulant">[docs]</a>
 <span class="k">def</span> <span class="nf">binder_cumulant</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates Binder cumulant for a given dataset.</span>
+
+<span class="sd">    The Binder cumulant is:</span>
+<span class="sd">    $U_L = 1 - \frac{\mu_4}{3 \mu_2^2}$</span>
+<span class="sd">    with $\mu_n$ the n-th central moment of the data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (numpy.ndarray): 1D array of observables (usually magnetization).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The computed Binder cumulant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">m2</span> <span class="o">=</span> <span class="n">moment</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">m2</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
     <span class="n">m4</span> <span class="o">=</span> <span class="n">moment</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -108,6 +211,16 @@
 <div class="viewcode-block" id="get_observable_arrays">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.get_observable_arrays">[docs]</a>
 <span class="k">def</span> <span class="nf">get_observable_arrays</span><span class="p">(</span><span class="n">spins</span><span class="p">,</span> <span class="n">betas</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Groups magnetization and energy arrays by unique inverse temperatures.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spins (numpy.ndarray): 3D array of all lattice samples.</span>
+<span class="sd">        betas (numpy.ndarray): 1D array of inverse temperatures corresponding to each sample.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: Two dictionaries (magnetisations, energies) where keys are unique beta </span>
+<span class="sd">        values and values are 1D arrays of the computed observables for that beta.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">energies</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">magnetisations</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">betas</span><span class="p">)):</span>
@@ -122,6 +235,26 @@
 <div class="viewcode-block" id="get_observables">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.get_observables">[docs]</a>
 <span class="k">def</span> <span class="nf">get_observables</span><span class="p">(</span><span class="n">M_arrays</span><span class="p">,</span> <span class="n">E_arrays</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes thermodynamic observables and their jackknife errors.</span>
+
+<span class="sd">    Calculates the mean and error for Magnetization (M), Energy (E), </span>
+<span class="sd">    Magnetic Susceptibility ($\chi$), Specific Heat (C), and Binder Cumulant (bc).</span>
+<span class="sd">    Susceptibility and spcific heat are calculated using the fluctuation-dissipation</span>
+<span class="sd">    theorem:</span>
+
+<span class="sd">    $\chi = L^2 \beta \text{Var}(M)$</span>
+<span class="sd">    $C = L^2 \beta^2 \text{Var}(E)$</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        M_arrays (dict): Dictionary of magnetization arrays grouped by beta.</span>
+<span class="sd">        E_arrays (dict): Dictionary of energy arrays grouped by beta.</span>
+<span class="sd">        L (int): Linear dimension of the square lattice.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A nested dictionary where each key (&#39;M&#39;, &#39;E&#39;, &#39;chi&#39;, &#39;C&#39;, &#39;bc&#39;) </span>
+<span class="sd">        contains a sub-dictionary with &#39;val&#39; (the mean values) and &#39;err&#39; </span>
+<span class="sd">        (the jackknife errors) across the ordered temperatures.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">obs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="p">[]},</span>
         <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="p">[]},</span>
@@ -134,14 +267,18 @@
         <span class="n">E_array</span> <span class="o">=</span> <span class="n">E_arrays</span><span class="p">[</span><span class="n">beta</span><span class="p">]</span>
         <span class="n">M_err</span><span class="p">,</span> <span class="n">chi_err</span><span class="p">,</span> <span class="n">bc_err</span> <span class="o">=</span> <span class="n">jackknife</span><span class="p">(</span><span class="n">M_array</span><span class="p">)</span>
         <span class="n">E_err</span><span class="p">,</span> <span class="n">C_err</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">jackknife</span><span class="p">(</span><span class="n">E_array</span><span class="p">)</span>     
+        
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;val&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">M_array</span><span class="p">))</span>
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">][</span><span class="s1">&#39;err&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">M_err</span><span class="p">)</span>
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">][</span><span class="s1">&#39;val&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">E_array</span><span class="p">))</span>
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">][</span><span class="s1">&#39;err&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">E_err</span><span class="p">)</span>
+        
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;chi&#39;</span><span class="p">][</span><span class="s1">&#39;val&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">M_array</span><span class="p">))</span>
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;chi&#39;</span><span class="p">][</span><span class="s1">&#39;err&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">chi_err</span><span class="p">)</span> 
+        
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">][</span><span class="s1">&#39;val&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">E_array</span><span class="p">))</span>
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">][</span><span class="s1">&#39;err&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">C_err</span><span class="p">)</span> 
+        
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;bc&#39;</span><span class="p">][</span><span class="s1">&#39;val&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binder_cumulant</span><span class="p">(</span><span class="n">M_array</span><span class="p">))</span>
         <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;bc&#39;</span><span class="p">][</span><span class="s1">&#39;err&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bc_err</span><span class="p">)</span> 
 
@@ -156,6 +293,16 @@
 <div class="viewcode-block" id="plot_observables">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.plot_observables">[docs]</a>
 <span class="k">def</span> <span class="nf">plot_observables</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots and saves graphs for physical observables as a function of beta.</span>
+
+<span class="sd">    Generates scatter plots with error bars for Magnetization, Energy, Susceptibility, </span>
+<span class="sd">    Specific Heat, and the Binder Cumulant.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        betas (numpy.ndarray): 1D array of unique inverse temperatures.</span>
+<span class="sd">        obs (dict): Dictionary of observables generated by `get_observables`.</span>
+<span class="sd">        path (pathlib.Path): Directory path where the plots will be saved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">(</span><span class="s2">&quot;Magnetization&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$|M|$&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="sa">r</span><span class="s2">&quot;$\beta$&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)),</span>
         <span class="p">(</span><span class="s2">&quot;Energy&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$E$&quot;</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="sa">r</span><span class="s2">&quot;$\beta$&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)),</span>
@@ -180,6 +327,14 @@
 <div class="viewcode-block" id="plot_histogram">
 <a class="viewcode-back" href="../../mylib.html#mylib.observables.plot_histogram">[docs]</a>
 <span class="k">def</span> <span class="nf">plot_histogram</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">M_arrays</span><span class="p">,</span> <span class="n">E_arrays</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots probability density histograms for magnetization and energy at specified betas.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        betas (list or numpy.ndarray): Collection of specific beta values to plot.</span>
+<span class="sd">        M_arrays (dict): Dictionary mapping beta values to magnetization arrays.</span>
+<span class="sd">        E_arrays (dict): Dictionary mapping beta values to energy arrays.</span>
+<span class="sd">        path (pathlib.Path, optional): Directory path where the histograms will be saved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">beta</span> <span class="ow">in</span> <span class="n">betas</span><span class="p">:</span>
         <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">M_arrays</span><span class="p">[</span><span class="n">beta</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
@@ -195,7 +350,8 @@
         <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
         <span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">path</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;histogram_</span><span class="si">{</span><span class="n">beta</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">path</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;histogram_</span><span class="si">{</span><span class="n">beta</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>     </div>
 
         
 
@@ -252,64 +408,31 @@
     <span class="n">plot_histogram</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">M_arrays</span><span class="p">,</span> <span class="n">E_arrays</span><span class="p">,</span> <span class="n">ROOT</span><span class="o">/</span><span class="s2">&quot;source&quot;</span><span class="p">)</span>
 </pre></div>
 
+           </div>
           </div>
-          
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, John Smith.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../index.html">CMEP project</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2026, John Smith.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
-      
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>
