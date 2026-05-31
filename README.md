@@ -1,13 +1,10 @@
 # CVAE for Ising Model Lattice Generation
 
 A conditional variational autoencoder (CVAE) designed to generate synthetic 2D Ising model lattices.
-The model is trained to capture the phase transition dynamics and generate physically realistic configurations from which
-high fidelity thermodynamic observables can be calculated (like magnetisation, energy, etc.).
+The model is trained to capture the phase transition dynamics and generate physically realistic configurations from which thermodynamic observables can be calculated (like magnetisation, energy, etc.).
 
 ## Overview
-This project uses **Keras** and **TensorFlow** to implement a generative model that learns the Boltzmann distribution of a 2d Ising
-lattice, composed of 32x32 binary spins (0/1). Unlike a standard VAE, this CVAE is conditioned on the temperature (or inverse 
-temperature, $\beta$) and also applies physical losses in training to better capture the magnetisationa and energy distributions.
+This project uses **Keras** and **TensorFlow** to implement a generative model that learns the Boltzmann distribution of a 2d Ising lattice, composed of 32x32 binary spins (0/1). Unlike a standard VAE, this CVAE is conditioned on the temperature (or inverse temperature, $\beta$).
 
 ## Tech Stack
 - **Python 3.x**
@@ -28,7 +25,9 @@ temperature, $\beta$) and also applies physical losses in training to better cap
    `pip install -r requirements.txt`
 
 ## Usage
-1. **Generate Data:** Run `python generate_data.py` to create the training lattices via Metropolis algorithm.
-2. **Train:** Run `train.py` to train the model on the generated data.
-3. **Tune:** Run `tune.py` for hyperparameter tuning
-4. **Inference:** Use the `analysis.py` to produce graphs of the training and CVAE output behaviour.
+1. **Generate Data:** Run `make` in the data directory to create the training lattices via the Wolff algorithm.
+2. **Train:** Run `python3 train.py --config config.json` in src to train the model with the custom configuration file
+3. **Tune:** Run `python3 tune.py --config config.json` in src for hyperparameter tuning with custom configuration file
+4. **Inference:** Run `python3 analysis.py` in src to produce graphs of the model behaviour.
+
+To run the whole pipeline together, run `make` in the root directory CMEP 
