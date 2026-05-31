@@ -25,6 +25,18 @@ ROOT = Path(__file__).parent.parent
 
 
 def get_baseline(val_data):
+    """Extracts baseline physical observables from the validation dataset.
+
+     Args:
+        val_data (tf.data.Dataset): The validation dataset containing batches of 
+            (spins, betas_norm) tensors.
+
+    Returns:
+        tuple: A tuple containing:
+            - observables (dict): A dictionary mapping unique beta values to their 
+              corresponding true 'M' (magnetization) and 'E' (energy) values.
+            - samples_per_beta (int): The number of lattice samples per unique beta.
+    """
     all_spins = []
     all_betas_norm = []
     
@@ -52,6 +64,16 @@ def get_baseline(val_data):
 
 
 def suggestions(trial, search_space_dict):
+    """Dynamically samples hyperparameters using Optuna based on a configuration.
+
+    Args:
+        trial (optuna.trial.Trial): The current Optuna trial object.
+        search_space_dict (dict): A dictionary defining the hyperparameter search 
+            space. Keys starting with an underscore are ignored.
+
+    Returns:
+        dict: A dictionary of sampled hyperparameter values for the current trial.
+    """
     suggested = {}
     for key, settings in search_space_dict.items():
         if key.startswith("_"):
@@ -68,6 +90,25 @@ def suggestions(trial, search_space_dict):
 
 
 def objective(trial, base_config, train_data, val_data, ising_obs, samples_per_beta):
+    """The Optuna objective function for tuning the CVAE model.
+
+    This function manages a complete training lifecycle for a single trial:
+    it sets up the hyperparameters, compiles the model, trains it, and evaluates 
+    its generative capability according to a physics loss function:
+    $\text{error} = \sum_{\beta} \left( \frac{|M_{true} - M_{gen}|}{|M_{true}|} + \frac{|E_{true} - E_{gen}|}{|E_{true}|} \right)$
+
+    Args:
+        trial (optuna.trial.Trial): The current Optuna trial object.
+        base_config (dict): The base configuration dictionary containing standard 
+            hyperparameters, training parameters, and scheduler settings.
+        train_data (tf.data.Dataset): The dataset used for training.
+        val_data (tf.data.Dataset): The dataset used for validation.
+        ising_obs (dict): Baseline physical observables computed from `get_baseline`.
+        samples_per_beta (int): The number of samples to generate per beta for evaluation.
+
+    Returns:
+        float: The total accumulated physical error (relative deviation from the baseline).
+    """
     hp = base_config['hyperparams'].copy()
     tp = base_config['train_params'].copy()
     sp = base_config['schedule_params'].copy()
