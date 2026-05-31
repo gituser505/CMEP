@@ -13,9 +13,9 @@ from keras.models import load_model
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 
-from projectlib.dataloader import IsingDataLoader
-from projectlib.model_padded import CVAE
-from projectlib.observables import *
+from mylib.dataloader import IsingDataLoader
+from mylib.model_padded import CVAE
+from mylib.observables import *
 
 ROOT = Path(__file__).parent.parent
 
