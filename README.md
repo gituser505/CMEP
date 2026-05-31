@@ -26,8 +26,8 @@ This project uses **Keras** and **TensorFlow** to implement a generative model t
 
 ## Usage
 1. **Generate Data:** Run `make` in the data directory to create the training lattices via the Wolff algorithm.
-2. **Train:** Run `python3 train.py --config config.json` in src to train the model with the custom configuration file
-3. **Tune:** Run `python3 tune.py --config config.json` in src for hyperparameter tuning with custom configuration file
+2. **Train:** Run `python3 train.py --config config.json` in src directory to train the model with the custom configuration file.
+3. **Tune:** Run `python3 tune.py --config config.json` in src directory for hyperparameter tuning with custom configuration file.
 4. **Inference:** Run `python3 analysis.py` in src to produce graphs of the model behaviour.
 
-To run the whole pipeline together, run `make` in the root directory CMEP 
+To run the whole pipeline together (except data generation), run `make` in the root CEMP directory.
