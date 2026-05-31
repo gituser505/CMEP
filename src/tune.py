@@ -9,43 +9,91 @@ import json
 from datetime import datetime
 
 import numpy as np
-import optuna # NEW IMPORT
+import optuna
 from optuna.integration import TFKerasPruningCallback
 
-from keras.optimizers import Adam, AdamW, Nadam
+from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-from mylib.dataloader import IsingDataLoader
-from mylib.model import CVAE
+from projectlib.dataloader import IsingDataLoader
+from projectlib.model_padded import CVAE
+from projectlib.schedulers import PhysicsScheduler, GumbelScheduler
+from projectlib.observables import magnetization, energy
+from projectlib.observables import get_observable_arrays
 
 ROOT = Path(__file__).parent.parent
 
 
-def objective(trial, base_config, train_data, val_data):
-    """
-    Samples hyperparameters, trains the model, and returns the validation loss.
-    """
-    # Suggest Hyperparameters
-    alpha = trial.suggest_float('alpha', 0.1, 10.0, log=True)
-    gamma = trial.suggest_float('gamma', 0.01, 100.0, log=True)
-    delta = trial.suggest_float('delta', 0.01, 100.0, log=True)
-    latent_exp = trial.suggest_int('latent_exp', 1, 8)
-    mlp_units_exp = trials.suggest_int('mlp_units_exp', 5, 9)
-    learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True)
+def get_baseline(val_data):
+    all_spins = []
+    all_betas_norm = []
     
-    # Update config with suggested values
+    # Extract all data from the validation dataset
+    for spins, betas_norm in val_data:
+        all_spins.append(spins.numpy())
+        all_betas_norm.append(betas_norm.numpy())
+        
+    val_spins = np.concatenate(all_spins, axis=0).squeeze(-1)
+    val_betas_norm = np.concatenate(all_betas_norm, axis=0).squeeze(-1)
+
+    betas_norm_unique = np.unique(np.round(val_betas_norm, decimals=5))
+    samples_per_beta = len(val_betas_norm)//len(betas_norm_unique)
+    
+    observables = {}
+    for b in sorted(betas_norm_unique):
+        mask = np.isclose(val_betas_norm, b, atol=1e-5)
+        spins_at_b = val_spins[mask]
+        true_M = np.mean(magnetization(spins_at_b))
+        true_E = np.mean(energy(spins_at_b))
+        observables[b] = {'M': true_M, 'E': true_E}
+
+    return observables, samples_per_beta
+
+
+def suggestions(trial, search_space_dict):
+    suggested = {}
+    for key, settings in search_space_dict.items():
+        if key.startswith("_"):
+            continue
+        
+        if settings["type"] == "float":
+            suggested[key] = trial.suggest_float(
+                key, settings["low"], settings["high"], log=settings.get("log", False))
+        elif settings["type"] == "int":
+            suggested[key] = trial.suggest_int(
+                key, settings["low"], settings["high"], log=settings.get("log", False))
+            
+    return suggested
+
+
+def objective(trial, base_config, train_data, val_data, ising_obs, samples_per_beta):
     hp = base_config['hyperparams'].copy()
     tp = base_config['train_params'].copy()
-   
-    hp['alpha'] = alpha
-    hp['gamma'] = gamma
-    hp['delta'] = delta
-    hp['latent_dim'] = 2**latent_exp
-    tp['learning_rate'] = learning_rate
+    sp = base_config['schedule_params'].copy()
+    
+    # Dynamically load suggested values if a search space is defined
+    search_space = base_config['search_space']
+    suggested_params = suggestions(trial, search_space)
+    
+    # Sort suggestions into hp or tp
+    for key, value in suggested_params.items():
+        if key in hp:
+            hp[key] = value
+        elif key in tp:
+            tp[key] = value
 
-    # Static parameters
+    # Unpack parameters    
+    use_physics_loss = hp['use_physics_loss']
+    use_gumbel = hp['use_gumbel']
+    start_from_epoch = tp['start_from_epoch']
+    learning_rate = tp['learning_rate']
     min_delta = tp['min_delta']
+    patience = tp['patience']
     epochs = tp['epochs']
+
+    # Print trial paramter values
+    for key, value in trial.params.items():
+        print(f"  {key}: {value}")
     
     # Build and compile model
     cvae = CVAE(hp)
@@ -53,22 +101,30 @@ def objective(trial, base_config, train_data, val_data):
 
     # Callbacks
     early_stop = EarlyStopping(
-        monitor='val_unweighted_loss', 
+        monitor='val_physics_loss', 
         mode='min',
-        patience=10, 
-        min_delta=min_delta, 
-        restore_best_weights=True)
+        patience=patience, 
+        min_delta=min_delta,
+        start_from_epoch=start_from_epoch, 
+        restore_best_weights=True )
     
     reduce_lr = ReduceLROnPlateau(
-        monitor='val_unweighted_loss', 
+        monitor='val_physics_loss', 
         mode='min',
-        factor=0.5,
-        patience=5,
-        min_lr=1e-7)
+        factor=0.5, 
+        patience=10, 
+        cooldown=2,
+        min_lr=1e-7 )
     
-    pruning = TFKerasPruningCallback(trial, monitor='val_unweighted_loss')
+    pruning = TFKerasPruningCallback(trial, monitor='val_physics_loss')
     callbacks = [early_stop, reduce_lr, pruning]
-    
+
+    # Add schedulers
+    if use_physics_loss == True:
+        callbacks.append(PhysicsScheduler(hp, sp))
+    if use_gumbel == True:
+        callbacks.append(GumbelScheduler(sp))
+
     # Train model
     history = cvae.fit(
         x=train_data, 
@@ -77,8 +133,25 @@ def objective(trial, base_config, train_data, val_data):
         callbacks=callbacks, 
         verbose=2)
 
-    # Return the best validation loss achieved in this trial
-    return min(history.history['val_unweighted_loss'])
+    # Compute tuning loss
+    betas_norm_unique = list(ising_obs.keys())
+    betas_norm_array = np.repeat(betas_norm_unique, samples_per_beta)
+    
+    gen_spins = cvae.generate(betas_norm_array, stochastic=True).numpy().squeeze(-1)
+    
+    physics_error = 0.0
+    for b in sorted(betas_norm_unique):
+        mask = np.isclose(betas_norm_array, b, atol=1e-5)
+        b_spins = gen_spins[mask]
+        gen_M = np.mean(magnetization(b_spins))
+        gen_E = np.mean(energy(b_spins))
+        true_M = ising_obs[b]['M']
+        true_E = ising_obs[b]['E']
+        err_M = np.abs(true_M - gen_M)/np.abs(true_M)
+        err_E = np.abs(true_E - gen_E)/np.abs(true_E)
+        physics_error += err_M + err_E
+
+    return physics_error
 
 
 if __name__ == "__main__":
@@ -104,47 +177,55 @@ if __name__ == "__main__":
     
     # Generate training datasets
     loader = IsingDataLoader(spins_file, betas_file, L, N)
-    train_data, val_data = loader.get_training_data(split_ratio, batch_size, buffer_size=N, augment=False)
-
+    train_data, val_data = loader.get_training_data(split_ratio, batch_size, augment=False)
     print("\nLoaded training and validation data.")
+
+    # Get baseline observables for tuning
+    ising_obs, samples_per_beta = get_baseline(val_data)
+
+    # Implement Optuna hyperparameter search
     print(f"\nStarting Hyperparameter Tuning for {trials} trials...")
     
-    # Create an Optuna study and "minimize" val_loss
     study = optuna.create_study(
         direction="minimize", 
         pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=5) )
     
-    # Run the optimization
-    study.optimize(lambda trial: objective(trial, config, train_data, val_data), n_trials=trials )
+    study.optimize(lambda trial: objective(trial, config, train_data, val_data, ising_obs, samples_per_beta), n_trials=trials )
 
-    # Save study history and best_config
-    results_dir = ROOT/"results"/data_dir/"tuning"
+    # Save study history
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    results_dir = ROOT/"results"/data_dir/f"tuning_{timestamp}"
     results_dir.mkdir(parents=True, exist_ok=True)
 
     best = study.best_trial
     df = study.trials_dataframe()
-    df.to_csv(results_dir/"all_trials_summary.csv", index=False)
+    df.to_csv(results_dir/"trials_summary.csv", index=False)
 
     with open(results_dir/"base_config.json", 'w') as f:
         json.dump(config, f, indent=2)
         
+    # Map the best parameters back into the config sections
     best_config = config.copy()
-    best_config['hyperparams']['alpha'] = best.params['alpha']
-    best_config['hyperparams']['gamma'] = best.params['gamma']
-    best_config['hyperparams']['delta'] = best.params['delta']
-    best_config['hyperparams']['latent_dim'] = best.params['latent_dim']
-    best_config['train_params']['learning_rate'] = best.params['learning_rate']    
+    search_space = best_config.get('search_space', {})
     
-    best_config_path = ROOT/"config"/f"best_config_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    with open(best_config_path,  'w') as f:
+    for key, value in best.params.items():
+        if key in best_config['hyperparams']:
+            best_config['hyperparams'][key] = value
+        if key in best_config['train_params']:
+            best_config['train_params'][key] = value
+              
+    # Save optimal config
+    best_config_path = ROOT/"config"/f"best_config_{timestamp}.json"
+    with open(best_config_path, 'w') as f:
         json.dump(best_config, f, indent=2)
+
+    # Save results path for easy makefile reading
+    with open(".latest_tune.txt", "w") as f:
+        f.write(str(results_dir))
     
     print(f"\nBest parameters saved to: {best_config_path}")
-
-    # Print the final results
     print("\n--- Tuning Completed ---")
-    print("Best Trial:")
-    print(f"  Value (Val Loss): {best.value}")
-    print("  Best Parameters:")
+    print(f"Best Value (Val Loss): {best.value}")
+    print("Best Parameters:")
     for key, value in best.params.items():
-        print(f"{key}: {value}")
+        print(f"  {key}: {value}")
