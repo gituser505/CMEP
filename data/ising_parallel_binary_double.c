@@ -117,14 +117,14 @@ int main( void ) {
 	double beta = 0.44;
 
     int nbetas;
-    double *betas = load_betas("betas_new1.txt", &nbetas);
+    double *betas = load_betas("betas.txt", &nbetas);
     int nthreads = omp_get_max_threads();
     int sokal_c = 5;
 
     int trial = 1;    
     char path[128];
     char mkdir_cmd[256];
-    char *root = "/home/local/ADUNIPI/r.browne1/CMEP_project/data";
+    char *root = "/CMEP/data";
     while (1) {
         snprintf(path, sizeof(path), "%s/ising_%d_%d_%d/", root, L, N*nbetas, nbetas);
         if (access(path, F_OK) != 0) break;
