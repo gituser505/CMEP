@@ -124,7 +124,7 @@ int main( void ) {
     int trial = 1;    
     char path[128];
     char mkdir_cmd[256];
-    char *root = "/CMEP/data";
+    char *root = "/../data";
     while (1) {
         snprintf(path, sizeof(path), "%s/ising_%d_%d_%d/", root, L, N*nbetas, nbetas);
         if (access(path, F_OK) != 0) break;
