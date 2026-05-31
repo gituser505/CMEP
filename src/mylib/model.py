@@ -4,7 +4,7 @@ from keras import ops, losses, metrics, layers, Model, Input, optimizers
 from keras import saving
 import tensorflow as tf
 
-@saving.register_keras_serializable(package="projectlib")
+@saving.register_keras_serializable(package="mylib")
 class Sampling(layers.Layer):
     def __init__(self, seed, **kwargs):
         super().__init__(**kwargs)
@@ -23,7 +23,7 @@ class Sampling(layers.Layer):
         return {"seed": self.seed, **super().get_config()}
 
 
-@saving.register_keras_serializable(package="projectlib")
+@saving.register_keras_serializable(package="mylib")
 class PeriodicPadding2D(layers.Layer):
     def __init__(self, kernel_size, strides=1, **kwargs):
         super().__init__(**kwargs)
@@ -50,7 +50,7 @@ class PeriodicPadding2D(layers.Layer):
         return {**super().get_config(), "kernel_size": self.k, "strides": self.s}
 
 
-@saving.register_keras_serializable(package="projectlib")
+@saving.register_keras_serializable(package="mylib")
 class FiLMLayer(layers.Layer):
     def __init__(self, filters, hidden_units=32, **kwargs):
         super().__init__(**kwargs)
@@ -76,7 +76,7 @@ class FiLMLayer(layers.Layer):
         return {**super().get_config(), "filters": self.filters, "hidden_units": self.hidden_units}
 
 
-@saving.register_keras_serializable(package="projectlib")
+@saving.register_keras_serializable(package="mylib")
 class CVAE(Model):
     def __init__(self, hparams, **kwargs):
         super().__init__(**kwargs)
