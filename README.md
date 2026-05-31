@@ -8,7 +8,7 @@ This project uses **Keras** and **TensorFlow** to implement a generative model t
 
 ## Tech Stack
 - **Python 3.x**
-- **Keras / Tensorflow** (Backend)
+- **Keras 3.x / Tensorflow 2.8.x** (Backend)
 - **NumPy & Matplotlib** (Data processing and visualization)
 - Ising model souce code in C (Used for initial data generation)
 
