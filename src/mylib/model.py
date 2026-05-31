@@ -1,94 +1,40 @@
 import numpy as np
 import keras as k
-from keras import ops, losses, metrics, layers, Model, Input, optimizers
-from keras import saving
+from keras import ops, losses, metrics, layers, Model, Input, optimizers, saving
 import tensorflow as tf
 
-@saving.register_keras_serializable(package="mylib")
-class Sampling(layers.Layer):
-    def __init__(self, seed, **kwargs):
-        super().__init__(**kwargs)
-        self.seed = seed
-        self.seed_generator = k.random.SeedGenerator(seed)
-
-    def call(self, inputs, training=False):
-        z_mean, z_log_var = inputs
-        if training is True:
-            epsilon = k.random.normal(ops.shape(z_mean), seed=self.seed_generator)
-            return z_mean + ops.exp(0.5 * z_log_var) * epsilon
-        else:
-            return z_mean
-
-    def get_config(self):
-        return {"seed": self.seed, **super().get_config()}
-
-
-@saving.register_keras_serializable(package="mylib")
-class PeriodicPadding2D(layers.Layer):
-    def __init__(self, kernel_size, strides=1, **kwargs):
-        super().__init__(**kwargs)
-        self.k = kernel_size
-        self.s = strides
-
-    def call(self, x):
-        L = ops.shape(x)[1]
-        out_dim = (L + self.s - 1) // self.s
-        pad_total = ops.maximum(0, (out_dim - 1) * self.s + self.k - L)
-        pad_beg = pad_total // 2
-        pad_end = pad_total - pad_beg
-
-        top = x[:, L - pad_beg : L, :, :]
-        bottom = x[:, 0 : pad_end, :, :]
-        x = ops.concatenate([top, x, bottom], axis=1)
-
-        left = x[:, :, L - pad_beg : L, :]
-        right = x[:, :, 0 : pad_end, :]
-        x = ops.concatenate([left, x, right], axis=2)
-        return x
-
-    def get_config(self):
-        return {**super().get_config(), "kernel_size": self.k, "strides": self.s}
-
-
-@saving.register_keras_serializable(package="mylib")
-class FiLMLayer(layers.Layer):
-    def __init__(self, filters, hidden_units=32, **kwargs):
-        super().__init__(**kwargs)
-        self.filters = filters
-        self.hidden_units = hidden_units
-        self.dense_hidden = layers.Dense(self.hidden_units, activation='relu')
-        self.dense_gamma = layers.Dense(self.filters)
-        self.dense_delta = layers.Dense(self.filters)
-        self.reshape = layers.Reshape((1, 1, self.filters))
-        self.multiply = layers.Multiply()
-        self.add = layers.Add()
-
-    def call(self, inputs):
-        x_features, beta = inputs
-        film_hidden = self.dense_hidden(beta)
-        gamma = self.reshape(self.dense_gamma(film_hidden))
-        delta = self.reshape(self.dense_delta(film_hidden))
-        x_modulated = self.multiply([x_features, gamma])
-        x_modulated = self.add([x_modulated, delta])
-        return x_modulated
-
-    def get_config(self):
-        return {**super().get_config(), "filters": self.filters, "hidden_units": self.hidden_units}
-
+from mylib.layers import Sampling, FiLMLayer, PeriodicPadding2D
 
 @saving.register_keras_serializable(package="mylib")
 class CVAE(Model):
+    """A Physics-Informed Conditional Variational Autoencoder for the Ising Model.
+
+    This model generates 2D spin lattice configurations conditioned on an inverse 
+    temperature label (beta). It features optional physics-informed loss functions 
+    that penalize deviations in macroscopic observables (magnetization and energy) 
+    between the input lattices and the generated reconstructions. Continuous relaxation 
+    of the discrete spins is achieved via the Gumbel-Softmax trick.
+
+    Args:
+        hparams (dict): A dictionary of hyperparameters defining the model architecture 
+            and training settings (e.g., L, latent_dim, enc_filters, mlp_units, alpha).
+        **kwargs: Additional keyword arguments passed to the Keras Model base class.
+    """
     def __init__(self, hparams, **kwargs):
         super().__init__(**kwargs)
         self.hparams = hparams
 
+        # Dynamically set hyperparameters as class attributes
         for key, value in hparams.items():
             setattr(self, key, value)
         
         self.enc_cnn_out_shape = None
+
+        # Build model internally
         self.encoder = self._build_encoder()
         self.decoder = self._build_decoder()
 
+        # Setup loss trackers
         self.loss_tracker = [
             metrics.Mean(name="total_loss"), 
             metrics.Mean(name="recon_loss"), 
@@ -107,31 +53,40 @@ class CVAE(Model):
 
 
     def _build_encoder(self):
+        """Constructs the convolutional encoder network.
+
+        The encoder concatenates the spatial lattice with the conditioning variable 
+        (beta) spread across the spatial dimensions. It maps the input to the 
+        parameters of a latent Gaussian distribution.
+
+        Returns:
+            keras.Model: The compiled encoder model outputting `(z_mean, z_log_var, z)`.
+        """
         spins_in = Input(shape=(self.L, self.L, 1), name='spins_in')
         beta = Input(shape=(1,), name='beta_condition')
         
+        # Early beta conditioning
         beta_reshape = layers.Reshape((1, 1, 1))(beta) 
         beta_spatial = beta_reshape * ops.ones_like(spins_in)
         x_cnn = layers.Concatenate(axis=-1)([spins_in, beta_spatial])
 
+        # CNN network
         for i, (f,k,s) in enumerate( zip(self.enc_filters, self.kernels, self.strides) ):
-            #x_cnn = PeriodicPadding2D(k,1)(x_cnn)
-            #x_cnn = layers.Conv2D(f,k, padding='valid', use_bias=False, name=f'enc_conv_{i}')(x_cnn)
             x_cnn = layers.Conv2D(f,k,s, padding='same', use_bias=False, name=f'enc_conv_{i}')(x_cnn)
             x_cnn = layers.BatchNormalization()(x_cnn)
-            #x_cnn = layers.LayerNormalization()(x_cnn)
-            #x_cnn = layers.AveragePooling2D(s)(x_cnn)
             x_cnn = layers.LeakyReLU(self.lrlu_slope)(x_cnn)
 
+        # Save encoder CNN tail shape for the decoder CNN head
         self.enc_cnn_out_shape = x_cnn.shape[1:]
         x_latent = layers.Flatten()(x_cnn)
 
+        # Downscale flattened feature map progressively to the latent network
         for i,units in enumerate( self.mlp_units ):
             x_latent = layers.Dense(units, use_bias=False, name=f'enc_mlp_{i}')(x_latent)
             x_latent = layers.BatchNormalization()(x_latent)
-            #x_latent = layers.LayerNormalization()(x_latent)
             x_latent = layers.LeakyReLU(self.lrlu_slope)(x_latent)
 
+        # Latent space
         z_mean = layers.Dense(self.latent_dim, name='z_mean')(x_latent)
         z_log_var = layers.Dense(self.latent_dim, name='z_log_var')(x_latent)
         z = Sampling(seed=self.seed, name='z')([z_mean, z_log_var])
@@ -139,27 +94,35 @@ class CVAE(Model):
         return Model([spins_in, beta], [z_mean, z_log_var, z], name='encoder')
 
     def _build_decoder(self):
+        """Constructs the deconvolutional decoder network.
+
+        The decoder takes the sampled latent vector and the conditioning variable 
+        (beta) to reconstruct the original lattice. It utilizes Feature-wise Linear 
+        Modulation (FiLM) layers to deeply integrate the temperature conditioning 
+        throughout the upsampling process.
+
+        Returns:
+            keras.Model: The compiled decoder model outputting continuous logits.
+        """
         latent_space = Input(shape=(self.latent_dim,), name='latent_space')
         beta = Input(shape=(1,), name='beta_condition')
 
+        # Late embedding and reshaping for CNN
         x = layers.Concatenate()([latent_space, beta])
         cnn_units = int(np.prod(self.enc_cnn_out_shape))
 
+        # Upsaling latent code for decoder CNN
         for i,units in enumerate( reversed(self.mlp_units) ):
             x = layers.Dense(units, use_bias=False, name=f'dec_mlp_{i}')(x)
             x = layers.BatchNormalization()(x)
-            #x = layers.LayerNormalization()(x)
             x = layers.LeakyReLU(self.lrlu_slope)(x)
         x = layers.Dense(cnn_units, name='dec_mlp')(x)        
         x_cnn = layers.Reshape(self.enc_cnn_out_shape)(x)
 
+        # Decoder CNN
         for i, (f,s,k) in enumerate( zip(self.dec_filters, reversed(self.strides), reversed(self.kernels)) ):
-            #x_cnn = layers.UpSampling2D(s, interpolation="nearest")(x_cnn)
-            #x_cnn = PeriodicPadding2D(k, 1)(x_cnn)
-            #x_cnn = layers.Conv2D(f,k, padding='valid', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
             x_cnn = layers.Conv2DTranspose(f,k,s, padding='same', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
             x_cnn = layers.BatchNormalization()(x_cnn)
-            #x_cnn = layers.LayerNormalization()(x_cnn)
             x_cnn = FiLMLayer(f)([x_cnn, beta])
             x_cnn = layers.LeakyReLU(self.lrlu_slope)(x_cnn)
         spins_out = layers.Conv2D(1, 3, padding='same', name='dec_out')(x_cnn)
@@ -167,6 +130,15 @@ class CVAE(Model):
         return Model([latent_space, beta], spins_out, name='decoder')
 
     def call(self, inputs, training=True):
+        """Executes a standard forward pass through the CVAE.
+
+        Args:
+            inputs (tuple): Tuple containing `(spins_in, beta)`.
+            training (bool, optional): Indicates whether the model is in training mode. Defaults to True.
+
+        Returns:
+            list: `[spins_out, z_mean, z_log_var]` where `spins_out` is in logits.
+        """
         spins_in, beta = inputs
         z_mean, z_log_var, z = self.encoder([spins_in, beta], training=training)
         spins_out = self.decoder([z, beta], training=training)
@@ -174,6 +146,14 @@ class CVAE(Model):
 
     @tf.function(jit_compile=True)
     def train_step(self, inputs):
+        """Custom training step with XLA compilation.
+
+        Args:
+            inputs (tuple): Data passed from the dataset iterator.
+
+        Returns:
+            dict: Updated metric values.
+        """
         with tf.GradientTape() as tape:
             outputs = self(inputs, training=True)
             losses_list = self.compute_losses(inputs, outputs)
@@ -184,11 +164,36 @@ class CVAE(Model):
 
     @tf.function(jit_compile=True)
     def test_step(self, inputs):
+        """Custom evaluation step with XLA compilation.
+
+        Args:
+            inputs (tuple): Data passed from the dataset iterator.
+
+        Returns:
+            dict: Updated metric values.
+        """
         outputs = self(inputs, training=False)
         losses_list = self.compute_losses(inputs, outputs)
         return self.metric_updates(losses_list)
 
     def compute_losses(self, inputs, outputs):
+        """Computes all standard and physical loss components.
+
+        Calculates the Binary Cross-Entropy reconstruction loss and the Kullback-Leibler 
+        divergence. If `use_physics_loss` is enabled, it computes differences in energy 
+        and magnetization. If `use_gumbel` is enabled, discrete variables are relaxed 
+        using the Gumbel-Softmax trick:
+        $y = \sigma((x + \epsilon) / \tau)$
+        where $\epsilon \sim \text{Logistic}(0, 1)$ and $\tau$ is the temperature.
+
+        Args:
+            inputs (tuple): The original `(spins_in, beta)` batch.
+            outputs (list): The model predictions `[spins_out, z_mean, z_log_var]`.
+
+        Returns:
+            list: Contains `[total_loss, recon_loss, kl_loss]` (with `m_loss` and `e_loss` 
+            appended if physics losses are active).
+        """
         spins_in, _ = inputs
         spins_out, z_mean, z_log_var = outputs
         
@@ -214,11 +219,23 @@ class CVAE(Model):
 
     @tf.function(jit_compile=True)
     def generate(self, betas, stochastic=False):
+        """Generates new spin lattices corresponding to an array of temperature labels.
+
+        Args:
+            betas (Tensor): A 1D tensor of inverse temperatures (beta) conditions.
+            stochastic (bool, optional): If False, thresholds probabilities at 0.5. 
+                If True, uses uniform sampling against probabilities for inherently 
+                stochastic generation. Defaults to False.
+
+        Returns:
+            Tensor: A batch of generated, binary spin lattices (dtype: int8).
+        """
         betas = ops.cast(ops.reshape(betas, [-1, 1]), "float32")
         num_samples = ops.shape(betas)[0]
         z = k.random.normal([num_samples, self.latent_dim])
         spins_logits = self.decoder([z, betas], training=False)
         spins_probs = ops.sigmoid(spins_logits)
+        
         if stochastic is False:
             spins = ops.cast(spins_probs >= 0.5, "int8")
         else:
@@ -227,21 +244,63 @@ class CVAE(Model):
         return spins
 
     def magnetization(self, spins):
+        """Computes the absolute magnetization of a batch of spin configurations.
+
+        Args:
+            spins (Tensor): A batch of spin lattices in the domain [0, 1].
+
+        Returns:
+            Tensor: A 1D tensor representing the absolute magnetization per sample.
+        """
         M = ops.mean(spins, axis=(1, 2))
         return ops.abs(2.0*M - 1.0)
 
     def energy(self, spins, J=1.0):
+        """Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with
+        periodic boundary coditions.
+
+        $E = -J \sum_{\langle i, j \rangle} s_i s_j$ 
+
+        Args:
+            spins (Tensor): A batch of spin lattices in the domain [0, 1].
+            J (float, optional): Ferromagnetic coupling constant. Defaults to 1.0.
+
+        Returns:
+            Tensor: A 1D tensor representing the energy per sample.
+        """
         s = 2 * spins - 1
         right = ops.roll(s, shift=-1, axis=2)
         down = ops.roll(s, shift=-1, axis=1)
         return -J * ops.mean(s * (right + down), axis=(1, 2))
     
     def wasserstein(self, input, output):
+        """Computes the 1D Wasserstein distance between sorted input and output distributions.
+
+        Args:
+            input (Tensor): Ground truth empirical distribution.
+            output (Tensor): CVAE generated distribution.
+
+        Returns:
+            Tensor: The computed Wasserstein distance metric.
+        """
         input = ops.sort(input)
         output = ops.sort(output)
         return ops.mean(ops.abs(input - output))
 
     def mmd1(self, z, z_prior, sigmas=[1.0, 2.0, 5.0, 10.0]):
+        """Computes the Maximum Mean Discrepancy (MMD) using multiple RBF kernels for 2D vectors.
+
+        MMD quantifies the distance between two distributions defined by a combination 
+        of Gaussian kernels $k(x, y) = \exp(-\gamma ||x - y||^2)$.
+
+        Args:
+            z (Tensor): The sampled latent vectors.
+            z_prior (Tensor): Latent vectors drawn from the prior (usually N(0, 1)).
+            sigmas (list, optional): List of standard deviations for the RBF kernels.
+
+        Returns:
+            Tensor: The computed MMD loss.
+        """
         z_sq = ops.sum(ops.square(z), axis=1, keepdims=True)
         prior_sq = ops.sum(ops.square(z_prior), axis=1, keepdims=True)
         
@@ -260,6 +319,16 @@ class CVAE(Model):
         return mmd_loss
 
     def mmd2(self, x, y, sigmas=[0.05, 0.2, 1.0, 5.0]):
+        """Computes the Maximum Mean Discrepancy (MMD) for a 1D observations.
+
+        Args:
+            x (Tensor): First distribution sample.
+            y (Tensor): Second distribution sample.
+            sigmas (list, optional): List of standard deviations for the RBF kernels.
+
+        Returns:
+            Tensor: MMD loss.
+        """
         x = ops.reshape(x, [-1, 1])
         y = ops.reshape(y, [-1, 1])
 
@@ -279,17 +348,39 @@ class CVAE(Model):
 
     @property
     def metrics(self):
+        """Returns the list of Keras metrics tracked by the model."""
         return self.loss_tracker
 
     def metric_updates(self, losses_list):
+        """Updates the state of all tracked metrics for the current step.
+
+        Args:
+            losses_list (list): Losses returned by `compute_losses` function.
+
+        Returns:
+            dict: A dictionary mapping metric names to their current results.
+        """
         for t,l in zip(self.loss_tracker, losses_list): t.update_state(l)
         return {t.name: t.result() for t in self.loss_tracker}
 
     def get_config(self):
+        """Returns the configuration of the model for serialization.
+
+        Returns:
+            dict: The model's hyperparameter configuration.
+        """
         return {"hparams": self.hparams, **super().get_config() }
 
     @classmethod
     def from_config(cls, config):
+        """Instantiates the model from a serialization configuration.
+
+        Args:
+            config (dict): The saved configuration dictionary.
+
+        Returns:
+            CVAE: An instantiated CVAE model.
+        """        
         return cls(**config)
 
 

@@ -6,6 +6,21 @@ import matplotlib.pyplot as plt
 
 @numba.njit(parallel=True)
 def jackknife_samples(data):
+    """Generates jackknife samples for mean, variance, and Binder cumulant.
+
+    This function calculates the "leave-one-out" jackknife estimates for the 
+    first, second, and fourth moments of a given dataset, which are then used 
+    to calculate the sample mean, variance, and Binder cumulant.
+
+    Args:
+        data (numpy.ndarray): 1D array of observable data (e.g., magnetization or energy).
+
+    Returns:
+        tuple: A tuple containing three 1D numpy arrays:
+            - jk_mean: Jackknife samples of the mean.
+            - jk_var: Jackknife samples of the variance.
+            - jk_bc: Jackknife samples of the Binder cumulant.
+    """
     n = len(data)
     jk_mean = np.empty(n)
     jk_var = np.empty(n)
@@ -30,6 +45,20 @@ def jackknife_samples(data):
 
 
 def jackknife(data):
+    """Calculates the standard error of observables using Jackknife resampling.
+
+    The standard error is computed using the jackknife variance formula:
+    $\epsilon = \sqrt{(n-1) \text{Var}(\text{samples})}$.
+
+    Args:
+        data (numpy.ndarray): 1D array of raw measurements.
+
+    Returns:
+        tuple: A tuple containing the standard errors (float) for:
+            - mean_err: Error of the mean.
+            - var_err: Error of the variance.
+            - bc_err: Error of the Binder cumulant.
+    """
     n = len(data)
     jk_means, jk_vars, jk_bcs = jackknife_samples(data)
     mean_err  = np.sqrt( (n-1)*np.var(jk_means))
@@ -39,11 +68,35 @@ def jackknife(data):
 
 
 def magnetization(spins):
+    """Calculates the absolute magnetization per spin of a lattice.
+
+    Args:
+        spins (numpy.ndarray): 3D array of spin configurations with shape 
+            `(batch_size, L, L)` containing values of 0 or 1.
+
+    Returns:
+        numpy.ndarray: 1D array of absolute magnetization values for each lattice 
+        in the batch.
+    """
     M = spins.mean(axis=(1, 2))
     return np.abs(2*M - 1)
 
 
 def energy(spins, J=1.0):
+    """Calculates the energy per spin of a 2D square Ising lattice.
+
+    Computes the standard nearest-neighbor Ising Hamiltonian with periodic 
+    boundary conditions: 
+    $E = -J \sum_{\langle i, j \rangle} s_i s_j$.
+
+    Args:
+        spins (numpy.ndarray): 3D array of spin configurations with shape 
+            `(N, L, L)` containing values of 0 or 1.
+        J (float, optional): The ferromagnetic coupling constant. Defaults to 1.0.
+
+    Returns:
+        numpy.ndarray: 1D array of energy values per spin for each lattice.
+    """
     s = 2 * spins - 1  # Convert to spin ±1
     right = np.roll(s, shift=-1, axis=2)
     down = np.roll(s, shift=-1, axis=1)
@@ -51,6 +104,18 @@ def energy(spins, J=1.0):
 
 
 def binder_cumulant(data):
+    """Calculates Binder cumulant for a given dataset.
+
+    The Binder cumulant is:
+    $U_L = 1 - \frac{\mu_4}{3 \mu_2^2}$
+    with $\mu_n$ the n-th central moment of the data.
+
+    Args:
+        data (numpy.ndarray): 1D array of observables (usually magnetization).
+
+    Returns:
+        float: The computed Binder cumulant.
+    """
     m2 = moment(data, order=2, center=0)
     if m2 == 0.0: return 0.0
     m4 = moment(data, order=4, center=0)
@@ -58,6 +123,16 @@ def binder_cumulant(data):
 
 
 def get_observable_arrays(spins, betas):
+    """Groups magnetization and energy arrays by unique inverse temperatures.
+
+    Args:
+        spins (numpy.ndarray): 3D array of all lattice samples.
+        betas (numpy.ndarray): 1D array of inverse temperatures corresponding to each sample.
+
+    Returns:
+        tuple: Two dictionaries (magnetisations, energies) where keys are unique beta 
+        values and values are 1D arrays of the computed observables for that beta.
+    """
     energies = {}
     magnetisations = {}
     for b in sorted(np.unique(betas)):
@@ -69,6 +144,26 @@ def get_observable_arrays(spins, betas):
 
 
 def get_observables(M_arrays, E_arrays, L):
+    """Computes thermodynamic observables and their jackknife errors.
+
+    Calculates the mean and error for Magnetization (M), Energy (E), 
+    Magnetic Susceptibility ($\chi$), Specific Heat (C), and Binder Cumulant (bc).
+    Susceptibility and spcific heat are calculated using the fluctuation-dissipation
+    theorem:
+
+    $\chi = L^2 \beta \text{Var}(M)$
+    $C = L^2 \beta^2 \text{Var}(E)$
+
+    Args:
+        M_arrays (dict): Dictionary of magnetization arrays grouped by beta.
+        E_arrays (dict): Dictionary of energy arrays grouped by beta.
+        L (int): Linear dimension of the square lattice.
+
+    Returns:
+        dict: A nested dictionary where each key ('M', 'E', 'chi', 'C', 'bc') 
+        contains a sub-dictionary with 'val' (the mean values) and 'err' 
+        (the jackknife errors) across the ordered temperatures.
+    """
     obs = {
         'M': {'val': [], 'err': []},
         'E': {'val': [], 'err': []},
@@ -81,14 +176,18 @@ def get_observables(M_arrays, E_arrays, L):
         E_array = E_arrays[beta]
         M_err, chi_err, bc_err = jackknife(M_array)
         E_err, C_err, _ = jackknife(E_array)     
+        
         obs['M']['val'].append(np.mean(M_array))
         obs['M']['err'].append(M_err)
         obs['E']['val'].append(np.mean(E_array))
         obs['E']['err'].append(E_err)
+        
         obs['chi']['val'].append((L**2*beta)*np.var(M_array))
         obs['chi']['err'].append((L**2*beta)*chi_err) 
+        
         obs['C']['val'].append((L**2*beta**2)*np.var(E_array))
         obs['C']['err'].append((L**2*beta**2)*C_err) 
+        
         obs['bc']['val'].append(binder_cumulant(M_array))
         obs['bc']['err'].append(bc_err) 
 
@@ -100,6 +199,16 @@ def get_observables(M_arrays, E_arrays, L):
 
 
 def plot_observables(betas, obs, path):
+    """Plots and saves graphs for physical observables as a function of beta.
+
+    Generates scatter plots with error bars for Magnetization, Energy, Susceptibility, 
+    Specific Heat, and the Binder Cumulant.
+
+    Args:
+        betas (numpy.ndarray): 1D array of unique inverse temperatures.
+        obs (dict): Dictionary of observables generated by `get_observables`.
+        path (pathlib.Path): Directory path where the plots will be saved.
+    """
     configs = [
         ("Magnetization", r"$|M|$", (0, 1.1), r"$\beta$", (0, 0.9)),
         ("Energy", r"$E$", (-2.1, 0), r"$\beta$", (0, 0.9)),
@@ -121,6 +230,14 @@ def plot_observables(betas, obs, path):
 
 
 def plot_histogram(betas, M_arrays, E_arrays, path=None):
+    """Plots probability density histograms for magnetization and energy at specified betas.
+
+    Args:
+        betas (list or numpy.ndarray): Collection of specific beta values to plot.
+        M_arrays (dict): Dictionary mapping beta values to magnetization arrays.
+        E_arrays (dict): Dictionary mapping beta values to energy arrays.
+        path (pathlib.Path, optional): Directory path where the histograms will be saved.
+    """
     for beta in betas:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 5))
         ax1.hist(M_arrays[beta], bins='auto', density=True, alpha=0.5, label='M', color='blue')
@@ -136,7 +253,8 @@ def plot_histogram(betas, M_arrays, E_arrays, path=None):
         ax2.legend()
         ax2.grid(True)
         plt.tight_layout()
-        plt.savefig(path/f"histogram_{beta}.png", dpi=300)
+        if path:
+            plt.savefig(path/f"histogram_{beta}.png", dpi=300)     
         
 
 if __name__ == '__main__':
