@@ -26,16 +26,27 @@ class IsingDataLoader:
     def cast_to_float32(spins, betas):
         return tf.cast(spins, tf.float32), tf.cast(betas, tf.float32)
 
-    def random_augment(self, x, beta):
-        k = tf.random.uniform([], minval=0, maxval=4, dtype=tf.int32)  # rotation: 0,1,2,3
-        flip = tf.random.uniform([], minval=0, maxval=2, dtype=tf.int32)  # 0 or 1
-        invert = tf.random.uniform([], minval=0, maxval=2, dtype=tf.int32) # 0 or 1
-        x = tf.image.rot90(x, k=k)
-        x = tf.cond(flip == 1, lambda: tf.image.flip_left_right(x), lambda: x)
-        x = tf.cond(invert == 1, lambda: 1-x, lambda: x)
-        return x, beta
+    def random_augment(self, spins_batch, betas_batch):
+        batch_size = tf.shape(spins_batch)[0]
+        
+        invert_mask = tf.random.uniform([batch_size, 1, 1, 1], 0, 2, dtype=tf.int32) == 1
+        inverted_spins = tf.constant(1, dtype=spins_batch.dtype) - spins_batch
+        spins_batch = tf.where(invert_mask, inverted_spins, spins_batch)
 
-    """
+        lr_mask = tf.random.uniform([batch_size, 1, 1, 1], 0, 2, dtype=tf.int32) == 1
+        spins_batch = tf.where(lr_mask, tf.image.flip_left_right(spins_batch), spins_batch)
+
+        ud_mask = tf.random.uniform([batch_size, 1, 1, 1], 0, 2, dtype=tf.int32) == 1
+        spins_batch = tf.where(ud_mask, tf.image.flip_up_down(spins_batch), spins_batch)
+
+        tp_mask = tf.random.uniform([batch_size, 1, 1, 1], 0, 2, dtype=tf.int32) == 1
+        transposed_spins = tf.transpose(spins_batch, perm=[0, 2, 1, 3])
+        
+        spins_batch = tf.where(tp_mask, transposed_spins, spins_batch)
+
+        return spins_batch, betas_batch
+
+    
     def get_training_data(self, split_ratio, batch_size, augment=False):
         #stratified split indices for training/validation
         indices = np.arange(self.N)
@@ -45,12 +56,12 @@ class IsingDataLoader:
 
         train_data = Dataset.from_tensor_slices((self.spins[train_idx], betas_norm[train_idx]))
         val_data = Dataset.from_tensor_slices((self.spins[val_idx], betas_norm[val_idx]))
+        
+        train_data = train_data.shuffle(len(train_idx)).batch(batch_size)
+        val_data = val_data.batch(batch_size)
 
         if augment is True:
             train_data = train_data.map(self.random_augment, num_parallel_calls=tf.data.AUTOTUNE)
-        
-        train_data = train_data.shuffle(buffer=len(train_idx)).batch(batch_size)
-        val_data = val_data.batch(batch_size)
 
         train_data = train_data.map(self.cast_to_float32, num_parallel_calls=tf.data.AUTOTUNE)
         val_data = val_data.map(self.cast_to_float32, num_parallel_calls=tf.data.AUTOTUNE)
@@ -60,28 +71,40 @@ class IsingDataLoader:
 
         return train_data, val_data
     
-    """
-    def get_training_data(self, split_ratio, batch_size, augment=False):
+    def get_training_data_homogeneous(self, split_ratio, batch_size, augment=False):
         indices = np.arange(self.N)
         betas_norm = self.normalize_array(self.betas.copy())
         _, beta_category = np.unique(betas_norm.flatten(), return_inverse=True)
         train_idx, val_idx = train_test_split(indices, train_size=split_ratio, stratify=beta_category)
 
         def build_pure_dataset(idx_array, is_training):
-            datasets = []
             unique_cats = np.unique(beta_category[idx_array])
+            combined_ds = None
+            total_batches = 0
             
             for cat in unique_cats:
                 cat_idx = idx_array[beta_category[idx_array] == cat]
+                
                 ds = Dataset.from_tensor_slices((self.spins[cat_idx], betas_norm[cat_idx]))
-                if augment and is_training:
-                    ds = ds.map(self.random_augment, num_parallel_calls=tf.data.AUTOTUNE)
+                
                 if is_training:
                     ds = ds.shuffle(len(cat_idx))
-                ds = ds.batch(batch_size, drop_remainder=True)
-                datasets.append(ds)
+                    total_batches += len(cat_idx) // batch_size
+
+                ds = ds.batch(batch_size, drop_remainder=is_training)
+                
+                if combined_ds is None:
+                    combined_ds = ds
+                else:
+                    combined_ds = combined_ds.concatenate(ds)
             
-            combined_ds = Dataset.sample_from_datasets(datasets)
+            if is_training and total_batches > 0:
+                combined_ds = combined_ds.shuffle(total_batches)
+                
+            # 6. Apply augmentation and map functions
+            if is_training and augment:
+                combined_ds = combined_ds.map(self.random_augment, num_parallel_calls=tf.data.AUTOTUNE)
+                
             return combined_ds
 
         train_data = build_pure_dataset(train_idx, is_training=True)
