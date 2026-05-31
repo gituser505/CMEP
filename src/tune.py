@@ -15,11 +15,11 @@ from optuna.integration import TFKerasPruningCallback
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-from projectlib.dataloader import IsingDataLoader
-from projectlib.model_padded import CVAE
-from projectlib.schedulers import PhysicsScheduler, GumbelScheduler
-from projectlib.observables import magnetization, energy
-from projectlib.observables import get_observable_arrays
+from mylib.dataloader import IsingDataLoader
+from mylib.model_padded import CVAE
+from mylib.schedulers import PhysicsScheduler, GumbelScheduler
+from mylib.observables import magnetization, energy
+from mylib.observables import get_observable_arrays
 
 ROOT = Path(__file__).parent.parent
 
