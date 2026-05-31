@@ -2,7 +2,7 @@ import keras as k
 from keras import ops, layers
 from keras import saving
 
-@saving.register_keras_serializable(package="projectlib")
+@saving.register_keras_serializable(package="mylib")
 class PeriodicPadding2D(layers.Layer):
     def __init__(self, kernel_size, strides=1, **kwargs):
         super().__init__(**kwargs)
