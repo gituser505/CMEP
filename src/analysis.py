@@ -13,9 +13,9 @@ from keras.models import load_model
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 
-from mylib.dataloader import IsingDataLoader
-from mylib.model_padded import CVAE
-from mylib.observables import *
+from projectlib.dataloader import IsingDataLoader
+from projectlib.model_padded import CVAE
+from projectlib.observables import *
 
 ROOT = Path(__file__).parent.parent
 
@@ -36,17 +36,17 @@ if __name__ == "__main__":
     with open(results_dir/"config.json", 'r') as f:
         config = json.load(f)
 
-    # Unpack config
+    # Unpack parameters 
     L = config['hyperparams']['L']
     N = config['train_params']['N']
     data_dir = config['train_params']['data_dir']
 
+    # Get data
     spins_file = ROOT/"data"/data_dir/"lattice_samples.bin"
     betas_file = ROOT/"data"/data_dir/"beta_labels.bin"   
-
-    # Get Ising data
+ 
     loader = IsingDataLoader(spins_file, betas_file, L, N)
-    
+
     all_indices = np.arange(N)
     betas = loader.get_betas(all_indices)
     betas_norm = norm_array(betas)
@@ -54,13 +54,14 @@ if __name__ == "__main__":
 
     betas_unique, beta_category = np.unique(betas, return_inverse=True)
 
+    # Get reference ising model observables and thermodynamic averages
     M_ising, E_ising = get_observable_arrays(spins, betas)
     obs_ising = get_observables(M_ising, E_ising, L)
 
     # Load model
     cvae = load_model(results_dir/"cvae.keras")
 
-    # Generate new data from model; batch manually becuae of @tf.function(jit_compile=True)
+    # Get CVAE generated output and observables
     batch_size = 5000
     spins_cvae_list = []
 
@@ -73,15 +74,42 @@ if __name__ == "__main__":
     M_cvae, E_cvae = get_observable_arrays(spins_cvae, betas)
     obs_cvae = get_observables(M_cvae, E_cvae, L)
 
+    """
+    spins_mode_list = []
+
+    for i in range(0, len(betas_norm), batch_size):
+        betas_batch = betas_norm[i : i + batch_size]
+        spins_batch = cvae.generate(betas_batch, stochastic=False)
+        spins_mode_list.append(spins_batch.numpy().squeeze(-1))
+    spins_mode = np.concatenate(spins_mode_list, axis=0)
+
+    M_mode, E_mode = get_observable_arrays(spins_mode, betas)
+    obs_mode = get_observables(M_mode, E_mode, L)
+    """
+    
+    # Get continuous output and observables for comparison
+    spins_float_list = []
+    for i in range(0, len(betas_norm), batch_size):
+        betas_batch = betas_norm[i : i + batch_size]
+        num_samples = len(betas_batch)
+        betas_batch = k.ops.cast(k.ops.reshape(betas_batch, [-1, 1]), "float32")
+        z = k.random.normal([num_samples, cvae.latent_dim])       
+        spins_gen = cvae.decoder([z, betas_batch])
+        spins_float_list.append(k.ops.sigmoid(spins_gen).numpy().squeeze(-1))
+    spins_float = np.concatenate(spins_float_list, axis=0)
+
+    M_float, E_float = get_observable_arrays(spins_float, betas)
+    obs_float = get_observables(M_float, E_float, L)
+
    
     # --- PLOT1: training losses ---
     history = pd.read_csv(results_dir/"history.csv")
-    losses = ['total_loss', 'recon_loss', 'kl_loss']
+    losses = [col for col in history.columns if not col.startswith('val_') and col not in ['epoch', 'learning_rate']]
     for loss in losses:
         fig, ax = plt.subplots(figsize=(10, 6), layout="constrained")
-        ax.plot(history['epoch'], history[loss], label='Training Loss', color='blue', linestyle='-')
-        ax.plot(history['epoch'], history['val_'+loss], label='Validation Loss', color='orange', linestyle='--')
-        ax.set_title("", fontsize=16)
+        ax.plot(history['epoch'], history[loss], label='Training', color='blue', linestyle='-')
+        ax.plot(history['epoch'], history['val_'+loss], label='Validation', color='orange', linestyle='--')       
+        ax.set_title(loss.replace('_', ' ').title(), fontsize=16)
         ax.set_xlabel("Epoch", fontsize=14)
         ax.set_ylabel("Loss", fontsize=14)
         ax.set_xlim()
@@ -89,21 +117,22 @@ if __name__ == "__main__":
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.legend(fontsize=12)
         plt.savefig(results_dir/f"{loss}.png", dpi=300, bbox_inches='tight')
+        plt.close(fig)
 
 
     # --- PLOT 2: PCA ---
-    samples_per_beta = 200
+    samples_per_beta = 100
     total_pca = samples_per_beta * len(betas_unique)
     indices_pca, _ = train_test_split(all_indices, train_size=total_pca, stratify=beta_category)
     spins_pca = loader.get_spins(indices_pca)
     betas_pca = loader.get_betas(indices_pca)
 
-    M_pca = magnetization(spins_pca)
+    M_pca = 2*np.mean(spins_pca, axis=(1,2)) - 1
     E_pca = energy(spins_pca)
-
-    # Resahpe for CVAE inputs
+    
     betas_norm_pca_input = norm_array(betas_pca).reshape(-1,1)
     spins_pca_input = spins_pca.reshape((-1,L,L,1)).astype(np.float32)
+
     z_mean, _, _ = cvae.encoder.predict([spins_pca_input, betas_norm_pca_input])
 
     pca = PCA()
@@ -119,6 +148,7 @@ if __name__ == "__main__":
     ax.set_ylabel('PC2')
     ax.grid(True, alpha=0.3)
     plt.savefig(results_dir/'latent_pca.png', dpi=500)
+    plt.close(fig)
     
     # Cumulative variance  
     fig, ax = plt.subplots(figsize=(8, 6), layout="constrained")
@@ -128,6 +158,7 @@ if __name__ == "__main__":
     ax.set_title('PCA Cumulative Variance')
     ax.grid(True, alpha=0.3)
     plt.savefig(results_dir/'latent_pca_cumulative_varinace.png', dpi=500)
+    plt.close(fig)
 
     # PCA-observables correlation ---
     fig, ax = plt.subplots(2, 2, figsize=(12, 5), layout='constrained')
@@ -157,8 +188,9 @@ if __name__ == "__main__":
     fig.colorbar(sc4, ax=ax[1,1], label=r"$\beta$")
     
     plt.savefig(results_dir / "pca_vs_physics.png")
+    plt.close(fig)
     
-    
+
     # --- PLOT 3: Observables ---
     configs = [
         ("Magnetization", r"$|M|$", (0, 1.1), r"$\beta$", (0, 0.9)),
@@ -171,6 +203,8 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(figsize=(8, 6), layout="constrained")
         ax.errorbar(betas_unique, obs_ising[name]['val'], obs_ising[name]['err'], label=name, fmt='.-', capsize=3, ecolor='black')
         ax.errorbar(betas_unique, obs_cvae[name]['val'], obs_cvae[name]['err'], label=name, fmt='.-', capsize=3, ecolor='black')
+        #ax.errorbar(betas_unique, obs_float[name]['val'], obs_float[name]['err'], label=name, fmt='.-', capsize=3, ecolor='black')
+        #ax.errorbar(betas_unique, obs_mode[name]['val'], obs_mode[name]['err'], label=name, fmt='.-', capsize=3, ecolor='black')
         ax.set_title(title, size=20)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
@@ -179,12 +213,13 @@ if __name__ == "__main__":
         ax.legend()
         ax.grid(True, color='grey', linestyle=':', alpha=0.7)
         plt.savefig(results_dir/f'{title}.png', dpi=500)
+        plt.close(fig)
 
 
     # --- Histograms ---    
     fig, axes = plt.subplots(2, 3, figsize=(18, 10), layout="constrained")
 
-    for i, beta in enumerate([0.2, 0.43, 0.7]):
+    for i, beta in enumerate([0.2, 0.44, 0.7]):
         M_combined = np.concatenate([M_ising[beta], M_cvae[beta]])
         E_combined = np.concatenate([E_ising[beta], E_cvae[beta]])
         M_bins = np.histogram_bin_edges(M_combined, bins='auto')
@@ -193,8 +228,10 @@ if __name__ == "__main__":
         ax_m = axes[0, i]
         ax_m.hist(M_ising[beta], bins=M_bins, density=True, alpha=0.5, label='Ising', color='blue')
         ax_m.hist(M_cvae[beta], bins=M_bins, density=True, alpha=0.5, label='CVAE', color='orange')
-        ax_m.axvline(np.mean(M_ising[beta]), color='blue', linestyle=':', label=f'Ising Mean {np.mean(M_ising[beta])}')
-        ax_m.axvline(np.mean(M_cvae[beta]), color='orange', linestyle=':', label=f'CVAE Mean {np.mean(M_cvae[beta])}')
+        #ax_m.hist(M_mode[beta], bins=M_bins, density=True, alpha=0.5, label='Mode', color='green')
+        #ax_m.hist(M_float[beta], bins=M_bins, density=True, alpha=0.5, label='Float', color='red')
+        ax_m.axvline(np.mean(M_ising[beta]), color='blue', linestyle=':', label=f'Ising Mean {np.mean(M_ising[beta]):.3}')
+        ax_m.axvline(np.mean(M_cvae[beta]), color='orange', linestyle=':', label=f'CVAE Mean {np.mean(M_cvae[beta]):.3}')
         ax_m.set_title(f'Magnetization ($\\beta={beta}$)')
         ax_m.set_xlabel('M')
         ax_m.set_ylabel('Density')
@@ -204,8 +241,10 @@ if __name__ == "__main__":
         ax_e = axes[1, i]
         ax_e.hist(E_ising[beta], bins=E_bins, density=True, alpha=0.5, label='Ising', color='blue')
         ax_e.hist(E_cvae[beta], bins=E_bins, density=True, alpha=0.5, label='CVAE', color='orange')
-        ax_e.axvline(np.mean(E_ising[beta]), color='blue', linestyle=':', label=f'Ising Mean {np.mean(E_cvae[beta])}')
-        ax_e.axvline(np.mean(E_cvae[beta]), color='orange', linestyle=':', label=f'CVAE Mean {np.mean(E_cvae[beta])}')
+        #ax_m.hist(E_mode[beta], bins=E_bins, density=True, alpha=0.5, label='Mode', color='green')
+        #ax_m.hist(E_float[beta], bins=M_bins, density=True, alpha=0.5, label='Float', color='red')
+        ax_e.axvline(np.mean(E_ising[beta]), color='blue', linestyle=':', label=f'Ising Mean {np.mean(E_ising[beta]):.3}')
+        ax_e.axvline(np.mean(E_cvae[beta]), color='orange', linestyle=':', label=f'CVAE Mean {np.mean(E_cvae[beta]):.3}')
         ax_e.set_title(f'Energy ($\\beta={beta}$)')
         ax_e.set_xlabel('E')
         ax_e.set_ylabel('Density')
@@ -213,30 +252,30 @@ if __name__ == "__main__":
         ax_e.grid(True)
 
     plt.savefig(results_dir/"histograms.png", dpi=300)
+    plt.close(fig)
 
 
     # --- PLOT 5: Reconstructions ---    
-    betas_to_plot = [0.2, 0.43, 0.7]
-    titles = ["Input", "Recon", "Recon (Threshold)", "Recon (Stochastic)", "Binarized", "Sampled"]
+    betas_to_plot = [0.2, 0.44, 0.7]
+    titles = ["Input", "Recon", "Recon (threshold)", "Recon (stochastic)", "Generated (threshold)", "Generated (stochastic)"]
 
     fig, axes = plt.subplots(len(betas_to_plot), 6, figsize=(12, 6), layout="constrained")
 
     for row, b in enumerate(betas_to_plot): 
         mask = np.isclose(betas.flatten(), b, atol=1e-5)
-        idxs = np.where(mask)[0][:1]
-        spin = spins[idxs].reshape((1, L, L, 1)) 
-        beta = betas[idxs].reshape((1, 1))
-        beta_norm = betas_norm[idxs].reshape((1, 1))
+        spin = spins[mask][:1].reshape((1, L, L, 1)) 
+        beta = betas[mask][:1].reshape((1, 1))
+        beta_norm = betas_norm[mask][:1].reshape((1, 1))
         
-        spin_recon = cvae.predict([spin, beta_norm], verbose=0)[0].squeeze(-1)
-        spin_recon = k.ops.sigmoid(spin_recon)
+        spin_recon = cvae.predict([spin, beta_norm], verbose=0)[0]
+        spin_recon = k.ops.sigmoid(spin_recon).numpy().squeeze()
         spin_recon_det = np.where(spin_recon >= 0.5, 1.0, 0.0).astype(np.int64)
         spin_recon_stoch = np.random.binomial(n=1, p=spin_recon).astype(np.int64) 
-        spin_mode = cvae.generate(beta_norm, stochastic=False).numpy().squeeze(-1)
-        spin_random = cvae.generate(beta_norm, stochastic=True).numpy().squeeze(-1)
-        spin = spin.squeeze(-1)
+        spin_mode = cvae.generate(beta_norm, stochastic=False).numpy().squeeze()
+        spin_random = cvae.generate(beta_norm, stochastic=True).numpy().squeeze()
+        spin = spin.squeeze()
 
-        datasets = [spin[0], spin_recon[0], spin_recon_det[0], spin_recon_stoch[0], spin_mode[0], spin_random[0] ]
+        datasets = [spin, spin_recon, spin_recon_det, spin_recon_stoch, spin_mode, spin_random]
         
         # 5. Plot across the 6 columns for the current row
         for col, (data, title) in enumerate(zip(datasets, titles)):
@@ -252,6 +291,44 @@ if __name__ == "__main__":
                 
     fig.suptitle("Lattice Comparison", fontsize=16, fontweight='bold')
     plt.savefig(results_dir/"reconstructions_combined.png", dpi=500, bbox_inches='tight')
+    plt.close(fig)
+
+
+    # --- PLOT 6: 10 Generative Samples per Temperature ---    
+    betas_to_plot = [0.2, 0.44, 0.7]
+    num_lattices = 10
+
+    fig, axes = plt.subplots(len(betas_to_plot), num_lattices, figsize=(18, 5), layout="constrained")
+
+    for row, b in enumerate(betas_to_plot): 
+        mask = np.isclose(betas.flatten(), b, atol=1e-5)
+        single_beta_norm = betas_norm[mask][0] 
+        beta_batch = np.repeat(single_beta_norm, num_lattices).reshape((num_lattices, 1))
+        spins_gen = cvae.generate(beta_batch, stochastic=True).numpy().squeeze(-1)
+
+        # 5. Plot the 10 generated lattices across the columns
+        for col in range(num_lattices):
+            ax = axes[row, col]
+            
+            # Draw bold black borders around each image
+            for spine in ax.spines.values():
+                spine.set_edgecolor('black')
+                spine.set_linewidth(2)
+                
+            # Plot the specific generated lattice for this column
+            ax.imshow(spins_gen[col], cmap='gray', vmin=0, vmax=1)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            
+            # Set column and row titles (row/column 0 only)
+            if row == 0: 
+                ax.set_title(f"Sample {col+1}", fontsize=12)
+            if col == 0: 
+                ax.set_ylabel(f"$\\beta$ = {b}", fontsize=16, fontweight='bold')
+                
+    fig.suptitle("Generative Samples", fontsize=18, fontweight='bold')
+    plt.savefig(results_dir/"recon_samples.png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
 
 
     # --- Latent traversal ---
@@ -284,4 +361,5 @@ if __name__ == "__main__":
     plt.grid(True, linestyle='--')
     plt.legend()
     plt.savefig(results_dir/f"latent_traversal.png", dpi=500, bbox_inches='tight')
+    plt.close(fig)
 
