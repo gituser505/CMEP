@@ -1,19 +1,87 @@
 import numpy as np
-import tensorflow as tf
 import keras as k
 from keras import ops, losses, metrics, layers, Model, Input, optimizers
 from keras import saving
+import tensorflow as tf
 
-from mylib.layers import Sampling, FiLMLayer, PeriodicPadding2D
-from mylib.observables import magnetization, energy
+@saving.register_keras_serializable(package="projectlib")
+class Sampling(layers.Layer):
+    def __init__(self, seed, **kwargs):
+        super().__init__(**kwargs)
+        self.seed = seed
+        self.seed_generator = k.random.SeedGenerator(seed)
 
-@saving.register_keras_serializable(package="mylib")
+    def call(self, inputs, training=False):
+        z_mean, z_log_var = inputs
+        if training is True:
+            epsilon = k.random.normal(ops.shape(z_mean), seed=self.seed_generator)
+            return z_mean + ops.exp(0.5 * z_log_var) * epsilon
+        else:
+            return z_mean
+
+    def get_config(self):
+        return {"seed": self.seed, **super().get_config()}
+
+
+@saving.register_keras_serializable(package="projectlib")
+class PeriodicPadding2D(layers.Layer):
+    def __init__(self, kernel_size, strides=1, **kwargs):
+        super().__init__(**kwargs)
+        self.k = kernel_size
+        self.s = strides
+
+    def call(self, x):
+        L = ops.shape(x)[1]
+        out_dim = (L + self.s - 1) // self.s
+        pad_total = ops.maximum(0, (out_dim - 1) * self.s + self.k - L)
+        pad_beg = pad_total // 2
+        pad_end = pad_total - pad_beg
+
+        top = x[:, L - pad_beg : L, :, :]
+        bottom = x[:, 0 : pad_end, :, :]
+        x = ops.concatenate([top, x, bottom], axis=1)
+
+        left = x[:, :, L - pad_beg : L, :]
+        right = x[:, :, 0 : pad_end, :]
+        x = ops.concatenate([left, x, right], axis=2)
+        return x
+
+    def get_config(self):
+        return {**super().get_config(), "kernel_size": self.k, "strides": self.s}
+
+
+@saving.register_keras_serializable(package="projectlib")
+class FiLMLayer(layers.Layer):
+    def __init__(self, filters, hidden_units=32, **kwargs):
+        super().__init__(**kwargs)
+        self.filters = filters
+        self.hidden_units = hidden_units
+        self.dense_hidden = layers.Dense(self.hidden_units, activation='relu')
+        self.dense_gamma = layers.Dense(self.filters)
+        self.dense_delta = layers.Dense(self.filters)
+        self.reshape = layers.Reshape((1, 1, self.filters))
+        self.multiply = layers.Multiply()
+        self.add = layers.Add()
+
+    def call(self, inputs):
+        x_features, beta = inputs
+        film_hidden = self.dense_hidden(beta)
+        gamma = self.reshape(self.dense_gamma(film_hidden))
+        delta = self.reshape(self.dense_delta(film_hidden))
+        x_modulated = self.multiply([x_features, gamma])
+        x_modulated = self.add([x_modulated, delta])
+        return x_modulated
+
+    def get_config(self):
+        return {**super().get_config(), "filters": self.filters, "hidden_units": self.hidden_units}
+
+
+@saving.register_keras_serializable(package="projectlib")
 class CVAE(Model):
     def __init__(self, hparams, **kwargs):
         super().__init__(**kwargs)
         self.hparams = hparams
-        self.tau = k.Variable(1.0, trainable=False, dtype="float32", name="softmax_temp")
-        
+
         for key, value in hparams.items():
             setattr(self, key, value)
         
@@ -24,10 +92,19 @@ class CVAE(Model):
         self.loss_tracker = [
             metrics.Mean(name="total_loss"), 
             metrics.Mean(name="recon_loss"), 
-            metrics.Mean(name="kl_loss"), 
-            metrics.Mean(name="m_loss"),
-            metrics.Mean(name="e_loss"),
-            metrics.Mean(name="unweighted_loss")]
+            metrics.Mean(name="kl_loss")]
+        
+        if self.use_physics_loss:
+            self.delta = k.Variable(0.0, trainable=False, dtype="float32")
+            self.gamma = k.Variable(0.0, trainable=False, dtype="float32")
+            
+            self.loss_tracker.extend([
+                metrics.Mean(name="m_loss"),
+                metrics.Mean(name="e_loss")])
+            
+        if self.use_gumbel:
+            self.tau = k.Variable(1.0, trainable=False, dtype="float32")
+
 
     def _build_encoder(self):
         spins_in = Input(shape=(self.L, self.L, 1), name='spins_in')
@@ -38,11 +115,13 @@ class CVAE(Model):
         x_cnn = layers.Concatenate(axis=-1)([spins_in, beta_spatial])
 
         for i, (f,k,s) in enumerate( zip(self.enc_filters, self.kernels, self.strides) ):
-            #x_cnn = PeriodicPadding2D(k,s)(x_cnn)
+            #x_cnn = PeriodicPadding2D(k,1)(x_cnn)
+            #x_cnn = layers.Conv2D(f,k, padding='valid', use_bias=False, name=f'enc_conv_{i}')(x_cnn)
             x_cnn = layers.Conv2D(f,k,s, padding='same', use_bias=False, name=f'enc_conv_{i}')(x_cnn)
             x_cnn = layers.BatchNormalization()(x_cnn)
+            #x_cnn = layers.LayerNormalization()(x_cnn)
+            #x_cnn = layers.AveragePooling2D(s)(x_cnn)
             x_cnn = layers.LeakyReLU(self.lrlu_slope)(x_cnn)
-            #x_cnn = layers.MaxPooling2D(pool_size=s, strides=s, padding='same', name=f'enc_pool_{i}')(x_cnn)
 
         self.enc_cnn_out_shape = x_cnn.shape[1:]
         x_latent = layers.Flatten()(x_cnn)
@@ -50,11 +129,12 @@ class CVAE(Model):
         for i,units in enumerate( self.mlp_units ):
             x_latent = layers.Dense(units, use_bias=False, name=f'enc_mlp_{i}')(x_latent)
             x_latent = layers.BatchNormalization()(x_latent)
+            #x_latent = layers.LayerNormalization()(x_latent)
             x_latent = layers.LeakyReLU(self.lrlu_slope)(x_latent)
 
         z_mean = layers.Dense(self.latent_dim, name='z_mean')(x_latent)
         z_log_var = layers.Dense(self.latent_dim, name='z_log_var')(x_latent)
-        z = Sampling(name='z')([z_mean, z_log_var])
+        z = Sampling(seed=self.seed, name='z')([z_mean, z_log_var])
 
         return Model([spins_in, beta], [z_mean, z_log_var, z], name='encoder')
 
@@ -68,23 +148,25 @@ class CVAE(Model):
         for i,units in enumerate( reversed(self.mlp_units) ):
             x = layers.Dense(units, use_bias=False, name=f'dec_mlp_{i}')(x)
             x = layers.BatchNormalization()(x)
+            #x = layers.LayerNormalization()(x)
             x = layers.LeakyReLU(self.lrlu_slope)(x)
         x = layers.Dense(cnn_units, name='dec_mlp')(x)        
         x_cnn = layers.Reshape(self.enc_cnn_out_shape)(x)
 
         for i, (f,s,k) in enumerate( zip(self.dec_filters, reversed(self.strides), reversed(self.kernels)) ):
             #x_cnn = layers.UpSampling2D(s, interpolation="nearest")(x_cnn)
-            #x_cnn = PeriodicPadding2D(k,s)(x_cnn)
+            #x_cnn = PeriodicPadding2D(k, 1)(x_cnn)
+            #x_cnn = layers.Conv2D(f,k, padding='valid', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
             x_cnn = layers.Conv2DTranspose(f,k,s, padding='same', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
-            #x_cnn = layers.Conv2D(f, k, padding='valid', use_bias=False, name=f'dec_conv_{i}')(x_cnn)
             x_cnn = layers.BatchNormalization()(x_cnn)
+            #x_cnn = layers.LayerNormalization()(x_cnn)
             x_cnn = FiLMLayer(f)([x_cnn, beta])
             x_cnn = layers.LeakyReLU(self.lrlu_slope)(x_cnn)
-        spins_out = layers.Conv2D(1, 1, name='dec_out')(x_cnn)
+        spins_out = layers.Conv2D(1, 3, padding='same', name='dec_out')(x_cnn)
         
         return Model([latent_space, beta], spins_out, name='decoder')
 
-    def call(self, inputs, training=False):
+    def call(self, inputs, training=True):
         spins_in, beta = inputs
         z_mean, z_log_var, z = self.encoder([spins_in, beta], training=training)
         spins_out = self.decoder([z, beta], training=training)
@@ -110,21 +192,25 @@ class CVAE(Model):
         spins_in, _ = inputs
         spins_out, z_mean, z_log_var = outputs
         
-        spins_soft = ops.sigmoid(spins_out)
-        spins_hard = ops.cast(spins_soft >= 0.5, "float32") 
-        spins_ste = spins_soft + ops.stop_gradient(spins_hard - spins_soft)
-
-        #uniform = k.random.uniform(ops.shape(spins_out), minval=1e-5, maxval=1.0 - 1e-5)
-        #logistic_noise = ops.log(uniform) - ops.log(1.0 - uniform)
-        #spins_discrete = ops.sigmoid((spins_out + logistic_noise) / self.tau)
-
         recon_loss = ops.mean(ops.sum(losses.binary_crossentropy(spins_in, spins_out, from_logits=True), axis=[1,2]))
         kl_loss = -0.5 * ops.mean(ops.sum(1 + z_log_var - ops.square(z_mean) - ops.exp(z_log_var), axis=1))       
-        m_loss = ops.mean(ops.abs(self.magnetization(spins_ste) - self.magnetization(spins_in)))
-        e_loss = ops.mean(ops.abs(self.energy(spins_ste) - self.energy(spins_in)))
-        total_loss = recon_loss + self.alpha * kl_loss + self.gamma * m_loss + self.delta * e_loss
-        unweighted_loss = recon_loss + kl_loss + m_loss + e_loss
-        return [total_loss, recon_loss, kl_loss, m_loss, e_loss, unweighted_loss]
+        total_loss = recon_loss + self.alpha * kl_loss
+
+        if self.use_physics_loss:
+            if self.use_gumbel:
+                uniform = k.random.uniform(ops.shape(spins_out), minval=1e-5, maxval=1.0 - 1e-5)
+                logistic_noise = ops.log(uniform) - ops.log(1.0 - uniform)
+                spins_new = ops.sigmoid((spins_out + logistic_noise) / self.tau)
+            else:
+                spins_new = ops.sigmoid(spins_out)
+
+            m_loss = ops.abs(self.magnetization(spins_new) - self.magnetization(spins_in))
+            e_loss = ops.abs(self.energy(spins_new) - self.energy(spins_in))
+
+            total_loss += self.gamma * m_loss + self.delta * e_loss
+            return [total_loss, recon_loss, kl_loss, m_loss, e_loss]
+
+        return [total_loss, recon_loss, kl_loss]
 
     @tf.function(jit_compile=True)
     def generate(self, betas, stochastic=False):
@@ -139,6 +225,57 @@ class CVAE(Model):
             uniform = k.random.uniform(ops.shape(spins_probs))
             spins = ops.cast(uniform < spins_probs, "int8")
         return spins
+
+    def magnetization(self, spins):
+        M = ops.mean(spins, axis=(1, 2))
+        return ops.abs(2.0*M - 1.0)
+
+    def energy(self, spins, J=1.0):
+        s = 2 * spins - 1
+        right = ops.roll(s, shift=-1, axis=2)
+        down = ops.roll(s, shift=-1, axis=1)
+        return -J * ops.mean(s * (right + down), axis=(1, 2))
+    
+    def wasserstein(self, input, output):
+        input = ops.sort(input)
+        output = ops.sort(output)
+        return ops.mean(ops.abs(input - output))
+
+    def mmd1(self, z, z_prior, sigmas=[1.0, 2.0, 5.0, 10.0]):
+        z_sq = ops.sum(ops.square(z), axis=1, keepdims=True)
+        prior_sq = ops.sum(ops.square(z_prior), axis=1, keepdims=True)
+        
+        dist_zz = z_sq - 2.0 * ops.matmul(z, ops.transpose(z)) + ops.transpose(z_sq)
+        dist_pp = prior_sq - 2.0 * ops.matmul(z_prior, ops.transpose(z_prior)) + ops.transpose(prior_sq)
+        dist_zp = z_sq - 2.0 * ops.matmul(z, ops.transpose(z_prior)) + ops.transpose(prior_sq)
+
+        mmd_loss = 0.0
+        for sigma in sigmas:
+            gamma = 1.0 / (2.0 * ops.square(sigma))
+            k_zz = ops.exp(-gamma * dist_zz)
+            k_pp = ops.exp(-gamma * dist_pp)
+            k_zp = ops.exp(-gamma * dist_zp)
+            mmd_loss += ops.mean(k_zz) + ops.mean(k_pp) - 2.0 * ops.mean(k_zp)
+
+        return mmd_loss
+
+    def mmd2(self, x, y, sigmas=[0.05, 0.2, 1.0, 5.0]):
+        x = ops.reshape(x, [-1, 1])
+        y = ops.reshape(y, [-1, 1])
+
+        xx_dist = ops.square(x - ops.transpose(x))
+        yy_dist = ops.square(y - ops.transpose(y))
+        xy_dist = ops.square(x - ops.transpose(y))
+        
+        mmd_loss = 0.0
+        for sigma in sigmas:
+            gamma = 1.0 / (2.0 * (sigma ** 2))
+            k_xx = ops.exp(-gamma * xx_dist)
+            k_yy = ops.exp(-gamma * yy_dist)
+            k_xy = ops.exp(-gamma * xy_dist)
+            mmd_loss += ops.mean(k_xx) + ops.mean(k_yy) - 2.0 * ops.mean(k_xy)
+            
+        return mmd_loss
 
     @property
     def metrics(self):
