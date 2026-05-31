@@ -39,6 +39,7 @@ def get_baseline(val_data):
     betas_norm_unique = np.unique(np.round(val_betas_norm, decimals=5))
     samples_per_beta = len(val_betas_norm)//len(betas_norm_unique)
     
+    # Compare ising baseline to cvae output
     observables = {}
     for b in sorted(betas_norm_unique):
         mask = np.isclose(val_betas_norm, b, atol=1e-5)
