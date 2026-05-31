@@ -12,9 +12,9 @@ import keras as k
 from keras.optimizers import Adam, AdamW
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, CSVLogger
 
-from projectlib.dataloader import IsingDataLoader
-from projectlib.model_padded import CVAE
-from projectlib.schedulers import PhysicsScheduler, GumbelScheduler
+from mylib.dataloader import IsingDataLoader
+from mylib.model_padded import CVAE
+from mylib.schedulers import PhysicsScheduler, GumbelScheduler
 
 ROOT = Path(__file__).parent.parent
 
