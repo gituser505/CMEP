@@ -45,11 +45,12 @@ class GumbelScheduler(Callback):
         min_tau (float, optional): The minimum allowed temperature. Defaults to 0.1.
         decay_rate (float, optional): The decay rate applied per epoch. Defaults to 0.95.
     """
-    def __init__(self, init_tau=1.0, min_tau=0.1, decay_rate=0.95):
+    def __init__(self, schedule_params):
         super().__init__()
-        self.init_tau = init_tau
-        self.min_tau = min_tau
-        self.decay_rate = decay_rate
+        self.warmup = schedule_params['warmup']
+        self.tau_init = schedule_params['tau_init']
+        self.tau_min = schedule_params['tau_min']
+        self.decay_rate = schedule_params['decay_rate']
 
     def on_epoch_end(self, epoch, logs=None):
         """Updates the model's tau value at the end of an epoch.
@@ -58,9 +59,12 @@ class GumbelScheduler(Callback):
             epoch (int): The index of the current epoch.
             logs (dict, optional): Dictionary of logs from the training process. Defaults to None.
         """
-        new_tau = max(self.min_tau, self.init_tau * (self.decay_rate ** (epoch + 1)))
-        self.model.tau.assign(new_tau) 
-        print(f" - tau annealed to: {new_tau:.4f}")
+        if epoch < self.warmup:
+            return
+        rel_epoch = epoch - self.warmup + 1
+        new_tau = max(self.tau_min, self.tau_init * (self.decay_rate ** rel_epoch))
+        self.model.tau.assign(new_tau)
+        print(f"tau={new_tau:.4f}")
 
 
 class PhysicalLossScheduler(Callback):
@@ -73,9 +77,12 @@ class PhysicalLossScheduler(Callback):
     Args:
         start_epoch (int): The epoch index (0-indexed) at which to activate the physical losses.
     """
-    def __init__(self, start_epoch):
+    def __init__(self, hparams, schedule_params):
         super().__init__()
-        self.start_epoch = start_epoch
+        self.gamma = hparams['gamma']
+        self.delta = hparams['delta']
+        self.warmup = schedule_params['warmup']
+        self.rampup = schedule_params['rampup']
 
     def on_epoch_begin(self, epoch, logs=None): 
         """Checks the current epoch and activates physical losses if the target is reached.
@@ -84,7 +91,10 @@ class PhysicalLossScheduler(Callback):
             epoch (int): The index of the current epoch.
             logs (dict, optional): Dictionary of logs from the training process. Defaults to None.
         """
-        if epoch == self.start_epoch:
-            self.model.gamma.assign(self.model.target_gamma)
-            self.model.delta.assign(self.model.target_delta)
-            print(f"\n*** Epoch {epoch + 1}: Physical losses (M & E) are now ACTIVE! ***\n")
+        if epoch < self.warmup:
+            return
+        rel_epoch = epoch - self.warmup + 1
+        ramp_progress = min(1.0, rel_epoch / float(self.rampup))
+        self.model.gamma.assign(self.gamma * ramp_progress)
+        self.model.delta.assign(self.delta * ramp_progress)
+        print(f"gamma={self.model.gamma.numpy():.4f}, delta={self.model.delta.numpy():.4f}")

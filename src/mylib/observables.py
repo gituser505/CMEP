@@ -19,29 +19,24 @@ def jackknife_samples(data):
         tuple: A tuple containing three 1D numpy arrays:
             - jk_mean: Jackknife samples of the mean.
             - jk_var: Jackknife samples of the variance.
-            - jk_bc: Jackknife samples of the Binder cumulant.
     """
     n = len(data)
     jk_mean = np.empty(n)
     jk_var = np.empty(n)
-    jk_bc = np.empty(n)
 
     sum_m1 = np.sum(data)
     sum_m2 = np.sum(data**2)
-    sum_m4 = np.sum(data**4)
 
     norm = 1.0 / (n - 1)
     
     for i in range(n):
         m1 = (sum_m1 - data[i]) * norm
         m2 = (sum_m2 - data[i]**2) * norm
-        m4 = (sum_m4 - data[i]**4) * norm
         
         jk_mean[i] = m1
         jk_var[i] = m2 - m1**2
-        jk_bc[i] = 1.0 - m4/(3.0*m2**2)
         
-    return jk_mean, jk_var, jk_bc
+    return jk_mean, jk_var
 
 
 def jackknife(data):
@@ -57,14 +52,12 @@ def jackknife(data):
         tuple: A tuple containing the standard errors (float) for:
             - mean_err: Error of the mean.
             - var_err: Error of the variance.
-            - bc_err: Error of the Binder cumulant.
     """
     n = len(data)
-    jk_means, jk_vars, jk_bcs = jackknife_samples(data)
+    jk_means, jk_vars = jackknife_samples(data)
     mean_err  = np.sqrt( (n-1)*np.var(jk_means))
     var_err   = np.sqrt( (n-1)*np.var(jk_vars))
-    bc_err    = np.sqrt( (n-1)*np.var(jk_bcs))
-    return mean_err, var_err, bc_err
+    return mean_err, var_err
 
 
 def magnetization(spins):
@@ -101,25 +94,6 @@ def energy(spins, J=1.0):
     right = np.roll(s, shift=-1, axis=2)
     down = np.roll(s, shift=-1, axis=1)
     return -J * np.mean(s * (right + down), axis=(1, 2))
-
-
-def binder_cumulant(data):
-    """Calculates Binder cumulant for a given dataset.
-
-    The Binder cumulant is:
-    $U_L = 1 - \frac{\mu_4}{3 \mu_2^2}$
-    with $\mu_n$ the n-th central moment of the data.
-
-    Args:
-        data (numpy.ndarray): 1D array of observables (usually magnetization).
-
-    Returns:
-        float: The computed Binder cumulant.
-    """
-    m2 = moment(data, order=2, center=0)
-    if m2 == 0.0: return 0.0
-    m4 = moment(data, order=4, center=0)
-    return 1.0 - m4/(3.0*m2*m2)
 
 
 def get_observable_arrays(spins, betas):
@@ -168,28 +142,22 @@ def get_observables(M_arrays, E_arrays, L):
         'M': {'val': [], 'err': []},
         'E': {'val': [], 'err': []},
         'chi': {'val': [], 'err': []},
-        'C': {'val': [], 'err': []},
-        'bc': {'val': [], 'err': []}
+        'C': {'val': [], 'err': []}
         }
     for beta in M_arrays:
         M_array = M_arrays[beta]
         E_array = E_arrays[beta]
-        M_err, chi_err, bc_err = jackknife(M_array)
-        E_err, C_err, _ = jackknife(E_array)     
+        M_err, chi_err = jackknife(M_array)
+        E_err, C_err = jackknife(E_array)     
         
         obs['M']['val'].append(np.mean(M_array))
         obs['M']['err'].append(M_err)
         obs['E']['val'].append(np.mean(E_array))
         obs['E']['err'].append(E_err)
-        
         obs['chi']['val'].append((L**2*beta)*np.var(M_array))
         obs['chi']['err'].append((L**2*beta)*chi_err) 
-        
         obs['C']['val'].append((L**2*beta**2)*np.var(E_array))
         obs['C']['err'].append((L**2*beta**2)*C_err) 
-        
-        obs['bc']['val'].append(binder_cumulant(M_array))
-        obs['bc']['err'].append(bc_err) 
 
     for key in obs:
         obs[key]['val'] = np.array(obs[key]['val'])
@@ -213,8 +181,7 @@ def plot_observables(betas, obs, path):
         ("Magnetization", r"$|M|$", (0, 1.1), r"$\beta$", (0, 0.9)),
         ("Energy", r"$E$", (-2.1, 0), r"$\beta$", (0, 0.9)),
         ("Susceptibility", r"$\chi$", (0, 20), r"$\beta$", (0, 0.9)),
-        ("Specific heat", r"$C$", (0, 2), r"$\beta$", (0, 0.9)),
-        ("Binder cumulant", r"$U_L$", (0, 1), r"$\beta$", (0, 0.9))
+        ("Specific heat", r"$C$", (0, 2), r"$\beta$", (0, 0.9))
         ]
     for name, (title, ylabel, ylim, xlabel, xlim) in zip(obs, configs):
         fig, ax = plt.subplots(figsize=(8, 6))

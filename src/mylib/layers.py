@@ -56,7 +56,7 @@ class PeriodicPadding2D(layers.Layer):
     """Applies periodic padding to a 2D input tensor.
 
     This layer periodically padds the input tensor by copying and concatenating
-    the opposite ends of each tensor dimension to each other.
+    the opposite ends of each tensor row/column to each other.
     The amount of padding is dynamically calculated to mimic Keras' standard 
     'same' padding behavior based on the provided kernel size and strides.
 
