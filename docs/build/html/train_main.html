@@ -1,0 +1,214 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="y" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>train_main module &mdash; CMEP project 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=be683c08"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tune module" href="tune.html" />
+    <link rel="prev" title="train module" href="train.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            CMEP project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html">analysis_main module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mylib.html">mylib package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">train_main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#train_main.build_callbacks"><code class="docutils literal notranslate"><span class="pre">build_callbacks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#train_main.build_results_dir"><code class="docutils literal notranslate"><span class="pre">build_results_dir()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#train_main.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#train_main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#train_main.save_config"><code class="docutils literal notranslate"><span class="pre">save_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tune.html">tune module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CMEP project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">train_main module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/train_main.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-train_main">
+<span id="train-main-module"></span><h1>train_main module<a class="headerlink" href="#module-train_main" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="train_main.build_callbacks">
+<span class="sig-prename descclassname"><span class="pre">train_main.</span></span><span class="sig-name descname"><span class="pre">build_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/train_main.html#build_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#train_main.build_callbacks" title="Link to this definition"></a></dt>
+<dd><p>Assembles the standard and custom Keras training callbacks.</p>
+<p>Sets up structural training components including early stopping criteria,
+learning rate decay on plateaus, checkpoint monitoring for validation loss,
+and CSV logging. Dynamically appends scheduling callbacks for physics and
+Gumbel constraints if toggled in hyperparameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) -- The complete configuration parameter dictionary.</p></li>
+<li><p><strong>results_dir</strong> (<em>pathlib.Path</em>) -- The destination directory path where checkpoints
+and loss history logs will be saved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list populated with configured Keras callback objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="train_main.build_results_dir">
+<span class="sig-prename descclassname"><span class="pre">train_main.</span></span><span class="sig-name descname"><span class="pre">build_results_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/train_main.html#build_results_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#train_main.build_results_dir" title="Link to this definition"></a></dt>
+<dd><p>Builds a uniquely named experiment results directory with a timestamp.</p>
+<p>Extracts crucial hyperparameters (latent dimensions, filters, batch size, alpha)
+and constructs a descriptive path string, appending physics loss constraints
+if active. Automatically handles the parent directory creation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>dict</em>) -- The full configuration dictionary containing 'hyperparams'
+and 'train_params' blocks.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Path object pointing to the newly initialized directory.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pathlib.Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="train_main.load_config">
+<span class="sig-prename descclassname"><span class="pre">train_main.</span></span><span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/train_main.html#load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#train_main.load_config" title="Link to this definition"></a></dt>
+<dd><p>Loads the model and training configuration parameters from a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_path</strong> (<em>str</em><em> or </em><em>pathlib.Path</em>) -- The path to the target JSON configuration file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing parsed configuration and hyperparameter blocks.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="train_main.main">
+<span class="sig-prename descclassname"><span class="pre">train_main.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/train_main.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#train_main.main" title="Link to this definition"></a></dt>
+<dd><p>Main execution function to initialize and run CVAE model training.</p>
+<p>Parses configuration inputs, configures deterministic global seeds, loads
+Ising model binary datasets, instantiates the CVAE architecture, builds the
+callback routine array, executes the training fit process, and logs the latest
+valid run path tracking token.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="train_main.save_config">
+<span class="sig-prename descclassname"><span class="pre">train_main.</span></span><span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/train_main.html#save_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#train_main.save_config" title="Link to this definition"></a></dt>
+<dd><p>Saves the current configuration dictionary as an organized JSON file.</p>
+<p>Maintains reproducibility by archiving an exact copy of the configuration
+settings inside the newly generated experiment results folder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) -- The configuration dictionary to be archived.</p></li>
+<li><p><strong>path</strong> (<em>pathlib.Path</em>) -- The target directory where 'config.json' will be written.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="train.html" class="btn btn-neutral float-left" title="train module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tune.html" class="btn btn-neutral float-right" title="tune module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, John Smith.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

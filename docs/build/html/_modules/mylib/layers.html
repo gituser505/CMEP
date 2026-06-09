@@ -6,15 +6,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mylib.layers &mdash; CMEP project 1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../_static/documentation_options.js?v=be683c08"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -69,15 +69,15 @@
            <div itemprop="articleBody">
              
   <h1>Source code for mylib.layers</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">keras</span> <span class="k">as</span> <span class="nn">k</span>
-<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">ops</span><span class="p">,</span> <span class="n">layers</span>
-<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">saving</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">k</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span><span class="p">,</span> <span class="n">layers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">saving</span>
 
 
 <div class="viewcode-block" id="Sampling">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.Sampling">[docs]</a>
 <span class="nd">@saving</span><span class="o">.</span><span class="n">register_keras_serializable</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s2">&quot;mylib&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">Sampling</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Sampling</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs the reparameterization trick for Variational Autoencoders.</span>
 
 <span class="sd">    This layer takes the mean and log-variance from the encoder and samples </span>
@@ -90,20 +90,22 @@
 <span class="sd">        seed (int): Random seed for the noise generator to ensure reproducibility.</span>
 <span class="sd">        **kwargs: Additional keyword arguments passed to the base Layer class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seed_generator</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Sampling.call">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.Sampling.call">[docs]</a>
-    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Samples the latent vector z.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs (tuple): A tuple containing two Tensors:</span>
+
 <span class="sd">                - z_mean (Tensor): The mean of the latent distribution.</span>
 <span class="sd">                - z_log_var (Tensor): The log-variance of the latent distribution.</span>
+
 <span class="sd">            training (bool, optional): Whether the layer is in training or inference mode. </span>
 <span class="sd">                Defaults to False.</span>
 
@@ -120,7 +122,7 @@
 
 <div class="viewcode-block" id="Sampling.get_config">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.Sampling.get_config">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the configuration of the layer for serialization.</span>
 
 <span class="sd">        Returns:</span>
@@ -134,11 +136,11 @@
 <div class="viewcode-block" id="PeriodicPadding2D">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.PeriodicPadding2D">[docs]</a>
 <span class="nd">@saving</span><span class="o">.</span><span class="n">register_keras_serializable</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s2">&quot;mylib&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">PeriodicPadding2D</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PeriodicPadding2D</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies periodic padding to a 2D input tensor.</span>
 
 <span class="sd">    This layer periodically padds the input tensor by copying and concatenating</span>
-<span class="sd">    the opposite ends of each tensor dimension to each other.</span>
+<span class="sd">    the opposite ends of each tensor row/column to each other.</span>
 <span class="sd">    The amount of padding is dynamically calculated to mimic Keras&#39; standard </span>
 <span class="sd">    &#39;same&#39; padding behavior based on the provided kernel size and strides.</span>
 
@@ -149,14 +151,14 @@
 <span class="sd">            that will follow this layer. Defaults to 1.</span>
 <span class="sd">        **kwargs: Additional keyword arguments passed to the base Layer class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">kernel_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="n">strides</span>
 
 <div class="viewcode-block" id="PeriodicPadding2D.call">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.PeriodicPadding2D.call">[docs]</a>
-    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pads the input tensor using periodic boundary conditions.</span>
 
 <span class="sd">        Args:</span>
@@ -190,7 +192,7 @@
 
 <div class="viewcode-block" id="PeriodicPadding2D.get_config">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.PeriodicPadding2D.get_config">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the configuration of the layer for serialization.</span>
 
 <span class="sd">        Returns:</span>
@@ -204,7 +206,7 @@
 <div class="viewcode-block" id="FiLMLayer">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.FiLMLayer">[docs]</a>
 <span class="nd">@saving</span><span class="o">.</span><span class="n">register_keras_serializable</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s2">&quot;mylib&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">FiLMLayer</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FiLMLayer</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies Feature-wise Linear Modulation (FiLM) to input features.</span>
 
 <span class="sd">    This layer conditions a neural network by applying an affine transformation </span>
@@ -219,7 +221,7 @@
 <span class="sd">            of the conditioning MLP. Defaults to 32.</span>
 <span class="sd">        **kwargs: Additional keyword arguments passed to the base Layer class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">hidden_units</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">hidden_units</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filters</span> <span class="o">=</span> <span class="n">filters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hidden_units</span> <span class="o">=</span> <span class="n">hidden_units</span>
@@ -232,11 +234,12 @@
 
 <div class="viewcode-block" id="FiLMLayer.call">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.FiLMLayer.call">[docs]</a>
-    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the FiLM modulation to the feature maps.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inputs (tuple): A tuple containing two Tensors:</span>
+<span class="sd">            </span>
 <span class="sd">                - x_features (Tensor): The 4D convolutional feature maps to modulate </span>
 <span class="sd">                  with shape `(batch_size, height, width, channels)`.</span>
 <span class="sd">                - beta (Tensor): The conditioning variable (e.g., temperature labels).</span>
@@ -261,7 +264,7 @@
 
 <div class="viewcode-block" id="FiLMLayer.get_config">
 <a class="viewcode-back" href="../../mylib.html#mylib.layers.FiLMLayer.get_config">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the configuration of the layer for serialization.</span>
 
 <span class="sd">        Returns:</span>

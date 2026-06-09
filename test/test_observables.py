@@ -47,7 +47,7 @@ def test_jackknife_samples_computation():
     """
     data = np.array([2.0, 4.0, 4.0, 2.0], dtype=np.float64)
     
-    jk_mean, jk_var, jk_bc = jackknife_samples(data)
+    jk_mean, jk_var = jackknife_samples(data)
     
     # Hand-calculate first index (leave out 0)
     expected_m1 = (4.0 + 4.0 + 2.0) / 3.0  
@@ -63,11 +63,10 @@ def test_jackknife_standard_errors_on_flat_data():
     """test if jackknife calculates standard errors and handles flat data correctly.
     """
     flat_data = np.array([5.0, 5.0, 5.0, 5.0, 5.0])
-    mean_err, var_err, bc_err = jackknife(flat_data)
+    mean_err, var_err = jackknife(flat_data)
     
     assert mean_err == 0.0
     assert var_err == 0.0
-    assert bc_err == 0.0
 
 
 def test_get_observable_arrays():
@@ -90,7 +89,7 @@ def test_get_observables_thermodynamics():
 
     obs = get_observables(M_arrays, E_arrays, L=4)
     
-    for observable in ['M', 'E', 'chi', 'C', 'bc']:
+    for observable in ['M', 'E', 'chi', 'C']:
         assert observable in obs
         assert isinstance(obs[observable]['val'], np.ndarray)
         assert isinstance(obs[observable]['err'], np.ndarray)

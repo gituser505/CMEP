@@ -27,8 +27,10 @@ class Sampling(layers.Layer):
 
         Args:
             inputs (tuple): A tuple containing two Tensors:
+
                 - z_mean (Tensor): The mean of the latent distribution.
                 - z_log_var (Tensor): The log-variance of the latent distribution.
+
             training (bool, optional): Whether the layer is in training or inference mode. 
                 Defaults to False.
 
@@ -144,6 +146,7 @@ class FiLMLayer(layers.Layer):
 
         Args:
             inputs (tuple): A tuple containing two Tensors:
+            
                 - x_features (Tensor): The 4D convolutional feature maps to modulate 
                   with shape `(batch_size, height, width, channels)`.
                 - beta (Tensor): The conditioning variable (e.g., temperature labels).

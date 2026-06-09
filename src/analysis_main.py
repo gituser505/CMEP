@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 from mylib.dataloader import IsingDataLoader
 from mylib.model import CVAE
-from mylib.observables import *
+from mylib.observables import energy, get_observable_arrays, get_observables
 
 ROOT = Path(__file__).parent.parent
 
@@ -29,8 +29,8 @@ def norm_array(x):
     Returns:
         numpy.ndarray: The normalized array with values scaled between 0 and 1.
     """
-    min, max = x.min(), x.max()
-    return (x-min)/(max-min)
+    minimum, maximum = x.min(), x.max()
+    return (x-minimum)/(maximum-minimum)
 
 
 def load_config(config_path):
@@ -106,7 +106,7 @@ def plot_observables(betas, obs_ising, obs_cvae, path):
         plt.close(fig)
 
 
-def plot_histograms(M_ising, E_ising, M_cvae, E_cvae, path, betas=[0.2, 0.44, 0.7]): 
+def plot_histograms(M_ising, E_ising, M_cvae, E_cvae, betas_to_plot, path): 
     """Compares physical observable distributions for selected inverse temperatures.
 
     Generates overlapping histograms of Magnetization and Energy for both the reference 
@@ -122,7 +122,7 @@ def plot_histograms(M_ising, E_ising, M_cvae, E_cvae, path, betas=[0.2, 0.44, 0.
     """
     fig, axes = plt.subplots(2, 3, figsize=(18, 10), layout="constrained")
 
-    for i, beta in enumerate(betas):
+    for i, beta in enumerate(betas_to_plot):
         M_combined = np.concatenate([M_ising[beta], M_cvae[beta]])
         E_combined = np.concatenate([E_ising[beta], E_cvae[beta]])
         M_bins = np.histogram_bin_edges(M_combined, bins='auto')
@@ -225,7 +225,7 @@ def plot_latent_space(z_pca, var_ratios, betas_pca, M_pca, E_pca, path):
     plt.close(fig)
 
 
-def plot_reconstructions(cvae, spins, betas, betas_norm, path, betas_to_plot=[0.2, 0.44, 0.7]):  
+def plot_reconstructions(cvae, spins, betas, betas_norm, betas_to_plot, path):  
     """Compares input lattices with CVAE reconstructed and generated samples.
 
     Visualizes a grid comparing raw binary input, floating-point reconstructions, 
@@ -277,7 +277,7 @@ def plot_reconstructions(cvae, spins, betas, betas_norm, path, betas_to_plot=[0.
     plt.close(fig)
 
 
-def plot_generated_samples(cvae, betas, betas_norm, num_lattices, path, betas_to_plot=[0.2, 0.44, 0.7]):
+def plot_generated_samples(cvae, betas, betas_norm, num_lattices, betas_to_plot, path):
     """Generates and plots a grid of stochastically generated lattices from the CVAE.
 
     Args:
@@ -393,14 +393,16 @@ def main():
     pca = PCA()
     z_pca = pca.fit_transform(z_mean)
     var_ratios = pca.explained_variance_ratio_
+
+    betas_to_plot = [0.2, 0.44, 0.7]
     
     # Call isolating functions
     plot_training_losses(history, results_dir)
     plot_observables(betas_unique, obs_ising, obs_cvae, results_dir)
-    plot_histograms(M_ising, E_ising, M_cvae, E_cvae, results_dir)
+    plot_histograms(M_ising, E_ising, M_cvae, E_cvae, betas_to_plot, results_dir)
     plot_latent_space(z_pca, var_ratios, betas_pca, M_pca, E_pca, results_dir)
-    plot_reconstructions(cvae, spins, betas, betas_norm, results_dir)
-    plot_generated_samples(cvae, betas, betas_norm, 10, results_dir)
+    plot_reconstructions(cvae, spins, betas, betas_norm, betas_to_plot, results_dir)
+    plot_generated_samples(cvae, betas, betas_norm, 10, betas_to_plot, results_dir)
     
 
 if __name__ == "__main__":

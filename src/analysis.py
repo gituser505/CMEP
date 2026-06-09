@@ -15,19 +15,19 @@ from sklearn.model_selection import train_test_split
 
 from mylib.model import CVAE
 from mylib.dataloader import IsingDataLoader
-from mylib.observables import *
+from mylib.observables import magnetization, energy, get_observable_arrays, get_observables
 
 ROOT = Path(__file__).parent.parent
 
 
 def norm_array(x):
-    min, max = x.min(), x.max()
-    return (x-min)/(max-min)
+    minimum, maximum = x.min(), x.max()
+    return (x-minimum)/(maximum-minimum)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Analyse trained CVAE model')
-    parser.add_argument('--dir', type=str, required=True, help='model directory (e.g. results/exp_...)')
+    parser.add_argument('--dir', type=str, required=True, help='model directory')
     args = parser.parse_args()
 
     results_dir = ROOT/"results"/args.dir
@@ -280,7 +280,8 @@ if __name__ == "__main__":
         # 5. Plot across the 6 columns for the current row
         for col, (data, title) in enumerate(zip(datasets, titles)):
             ax = axes[row, col]
-            if row == 0: ax.set_title(title, fontsize=12)
+            if row == 0:
+                ax.set_title(title, fontsize=12)
             for spine in ax.spines.values():
                 spine.set_edgecolor('black')
                 spine.set_linewidth(2)

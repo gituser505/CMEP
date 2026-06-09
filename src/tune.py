@@ -16,10 +16,9 @@ from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from mylib.dataloader import IsingDataLoader
-from mylib.model_padded import CVAE
-from mylib.schedulers import PhysicsScheduler, GumbelScheduler
+from mylib.model import CVAE
+from mylib.scheduler import PhysicalLossScheduler, GumbelScheduler
 from mylib.observables import magnetization, energy
-from mylib.observables import get_observable_arrays
 
 ROOT = Path(__file__).parent.parent
 
@@ -27,7 +26,7 @@ ROOT = Path(__file__).parent.parent
 def get_baseline(val_data):
     """Extracts baseline physical observables from the validation dataset.
 
-     Args:
+    Args:
         val_data (tf.data.Dataset): The validation dataset containing batches of 
             (spins, betas_norm) tensors.
 
@@ -90,12 +89,14 @@ def suggestions(trial, search_space_dict):
 
 
 def objective(trial, base_config, train_data, val_data, ising_obs, samples_per_beta):
-    """The Optuna objective function for tuning the CVAE model.
+    r"""The Optuna objective function for tuning the CVAE model.
 
     This function manages a complete training lifecycle for a single trial:
     it sets up the hyperparameters, compiles the model, trains it, and evaluates 
     its generative capability according to a physics loss function:
-    $\text{error} = \sum_{\beta} \left( \frac{|M_{true} - M_{gen}|}{|M_{true}|} + \frac{|E_{true} - E_{gen}|}{|E_{true}|} \right)$
+
+    .. math::
+        \text{error} = \sum_{\beta} \left( \frac{|M_{true} - M_{gen}|}{|M_{true}|} + \frac{|E_{true} - E_{gen}|}{|E_{true}|} \right)
 
     Args:
         trial (optuna.trial.Trial): The current Optuna trial object.
@@ -163,7 +164,7 @@ def objective(trial, base_config, train_data, val_data, ising_obs, samples_per_b
 
     # Add schedulers
     if use_physics_loss == True:
-        callbacks.append(PhysicsScheduler(hp, sp))
+        callbacks.append(PhysicalLossScheduler(hp, sp))
     if use_gumbel == True:
         callbacks.append(GumbelScheduler(sp))
 

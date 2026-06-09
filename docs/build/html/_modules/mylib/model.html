@@ -6,15 +6,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mylib.model &mdash; CMEP project 1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../_static/documentation_options.js?v=be683c08"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -69,17 +69,17 @@
            <div itemprop="articleBody">
              
   <h1>Source code for mylib.model</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">keras</span> <span class="k">as</span> <span class="nn">k</span>
-<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">ops</span><span class="p">,</span> <span class="n">losses</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">optimizers</span><span class="p">,</span> <span class="n">saving</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">k</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="kn">import</span> <span class="n">ops</span><span class="p">,</span> <span class="n">losses</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">optimizers</span><span class="p">,</span> <span class="n">saving</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
-<span class="kn">from</span> <span class="nn">mylib.layers</span> <span class="kn">import</span> <span class="n">Sampling</span><span class="p">,</span> <span class="n">FiLMLayer</span><span class="p">,</span> <span class="n">PeriodicPadding2D</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mylib.layers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sampling</span><span class="p">,</span> <span class="n">FiLMLayer</span><span class="p">,</span> <span class="n">PeriodicPadding2D</span>
 
 <div class="viewcode-block" id="CVAE">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE">[docs]</a>
 <span class="nd">@saving</span><span class="o">.</span><span class="n">register_keras_serializable</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s2">&quot;mylib&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">CVAE</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CVAE</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A Physics-Informed Conditional Variational Autoencoder for the Ising Model.</span>
 
 <span class="sd">    This model generates 2D spin lattice configurations conditioned on an inverse </span>
@@ -93,7 +93,7 @@
 <span class="sd">            and training settings (e.g., L, latent_dim, enc_filters, mlp_units, alpha).</span>
 <span class="sd">        **kwargs: Additional keyword arguments passed to the Keras Model base class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hparams</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hparams</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hparams</span> <span class="o">=</span> <span class="n">hparams</span>
 
@@ -121,11 +121,11 @@
                 <span class="n">metrics</span><span class="o">.</span><span class="n">Mean</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;m_loss&quot;</span><span class="p">),</span>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">Mean</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;e_loss&quot;</span><span class="p">)])</span>
             
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_gumbel</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_gumbel</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">_build_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs the convolutional encoder network.</span>
 
 <span class="sd">        The encoder concatenates the spatial lattice with the conditioning variable </span>
@@ -166,7 +166,7 @@
 
         <span class="k">return</span> <span class="n">Model</span><span class="p">([</span><span class="n">spins_in</span><span class="p">,</span> <span class="n">beta</span><span class="p">],</span> <span class="p">[</span><span class="n">z_mean</span><span class="p">,</span> <span class="n">z_log_var</span><span class="p">,</span> <span class="n">z</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;encoder&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_build_decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs the deconvolutional decoder network.</span>
 
 <span class="sd">        The decoder takes the sampled latent vector and the conditioning variable </span>
@@ -204,7 +204,7 @@
 
 <div class="viewcode-block" id="CVAE.call">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.call">[docs]</a>
-    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes a standard forward pass through the CVAE.</span>
 
 <span class="sd">        Args:</span>
@@ -223,7 +223,7 @@
 <div class="viewcode-block" id="CVAE.train_step">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.train_step">[docs]</a>
     <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">jit_compile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom training step with XLA compilation.</span>
 
 <span class="sd">        Args:</span>
@@ -244,7 +244,7 @@
 <div class="viewcode-block" id="CVAE.test_step">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.test_step">[docs]</a>
     <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">jit_compile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Custom evaluation step with XLA compilation.</span>
 
 <span class="sd">        Args:</span>
@@ -260,8 +260,8 @@
 
 <div class="viewcode-block" id="CVAE.compute_losses">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.compute_losses">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_losses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes all standard and physical loss components.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_losses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes all standard and physical loss components.</span>
 
 <span class="sd">        Calculates the Binary Cross-Entropy reconstruction loss and the Kullback-Leibler </span>
 <span class="sd">        divergence. If `use_physics_loss` is enabled, it computes differences in energy </span>
@@ -305,7 +305,7 @@
 <div class="viewcode-block" id="CVAE.generate">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.generate">[docs]</a>
     <span class="nd">@tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">jit_compile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">stochastic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">stochastic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates new spin lattices corresponding to an array of temperature labels.</span>
 
 <span class="sd">        Args:</span>
@@ -333,7 +333,7 @@
 
 <div class="viewcode-block" id="CVAE.magnetization">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.magnetization">[docs]</a>
-    <span class="k">def</span> <span class="nf">magnetization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spins</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">magnetization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spins</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the absolute magnetization of a batch of spin configurations.</span>
 
 <span class="sd">        Args:</span>
@@ -348,8 +348,8 @@
 
 <div class="viewcode-block" id="CVAE.energy">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.energy">[docs]</a>
-    <span class="k">def</span> <span class="nf">energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spins</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spins</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with</span>
 <span class="sd">        periodic boundary coditions.</span>
 
 <span class="sd">        $E = -J \sum_{\langle i, j \rangle} s_i s_j$ </span>
@@ -369,7 +369,7 @@
     
 <div class="viewcode-block" id="CVAE.wasserstein">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.wasserstein">[docs]</a>
-    <span class="k">def</span> <span class="nf">wasserstein</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wasserstein</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the 1D Wasserstein distance between sorted input and output distributions.</span>
 
 <span class="sd">        Args:</span>
@@ -386,8 +386,8 @@
 
 <div class="viewcode-block" id="CVAE.mmd1">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.mmd1">[docs]</a>
-    <span class="k">def</span> <span class="nf">mmd1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">z_prior</span><span class="p">,</span> <span class="n">sigmas</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the Maximum Mean Discrepancy (MMD) using multiple RBF kernels for 2D vectors.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mmd1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">z_prior</span><span class="p">,</span> <span class="n">sigmas</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the Maximum Mean Discrepancy (MMD) using multiple RBF kernels for 2D vectors.</span>
 
 <span class="sd">        MMD quantifies the distance between two distributions defined by a combination </span>
 <span class="sd">        of Gaussian kernels $k(x, y) = \exp(-\gamma ||x - y||^2)$.</span>
@@ -420,7 +420,7 @@
 
 <div class="viewcode-block" id="CVAE.mmd2">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.mmd2">[docs]</a>
-    <span class="k">def</span> <span class="nf">mmd2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigmas</span><span class="o">=</span><span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mmd2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigmas</span><span class="o">=</span><span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the Maximum Mean Discrepancy (MMD) for a 1D observations.</span>
 
 <span class="sd">        Args:</span>
@@ -450,13 +450,13 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the list of Keras metrics tracked by the model.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span>
 
 <div class="viewcode-block" id="CVAE.metric_updates">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.metric_updates">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_updates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">losses_list</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_updates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">losses_list</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the state of all tracked metrics for the current step.</span>
 
 <span class="sd">        Args:</span>
@@ -471,7 +471,7 @@
 
 <div class="viewcode-block" id="CVAE.get_config">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.get_config">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the configuration of the model for serialization.</span>
 
 <span class="sd">        Returns:</span>
@@ -483,7 +483,7 @@
 <div class="viewcode-block" id="CVAE.from_config">
 <a class="viewcode-back" href="../../mylib.html#mylib.model.CVAE.from_config">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiates the model from a serialization configuration.</span>
 
 <span class="sd">        Args:</span>
@@ -498,8 +498,8 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">os</span>
-    <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">SimpleNamespace</span> 
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNamespace</span> 
 
     <span class="n">N</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.001</span>

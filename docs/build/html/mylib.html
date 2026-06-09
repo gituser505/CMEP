@@ -7,20 +7,20 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mylib package &mdash; CMEP project 1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=be683c08"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="train module" href="train.html" />
-    <link rel="prev" title="analysis module" href="analysis.html" /> 
+    <link rel="prev" title="analysis_main module" href="analysis_main.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,9 +46,13 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html">analysis_main module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">mylib package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mylib-dataloader-module">mylib.dataloader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mylib.dataloader">mylib.dataloader module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mylib.dataloader.IsingDataLoader"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-mylib.layers">mylib.layers module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.layers.FiLMLayer"><code class="docutils literal notranslate"><span class="pre">FiLMLayer</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.layers.PeriodicPadding2D"><code class="docutils literal notranslate"><span class="pre">PeriodicPadding2D</span></code></a></li>
@@ -60,7 +64,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-mylib.observables">mylib.observables module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#mylib.observables.binder_cumulant"><code class="docutils literal notranslate"><span class="pre">binder_cumulant()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.observables.energy"><code class="docutils literal notranslate"><span class="pre">energy()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.observables.get_observable_arrays"><code class="docutils literal notranslate"><span class="pre">get_observable_arrays()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.observables.get_observables"><code class="docutils literal notranslate"><span class="pre">get_observables()</span></code></a></li>
@@ -73,8 +76,6 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-mylib.scheduler">mylib.scheduler module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.scheduler.GumbelScheduler"><code class="docutils literal notranslate"><span class="pre">GumbelScheduler</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#mylib.scheduler.KLAnnealing"><code class="docutils literal notranslate"><span class="pre">KLAnnealing</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#mylib.scheduler.KLAnnealingCapacity"><code class="docutils literal notranslate"><span class="pre">KLAnnealingCapacity</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#mylib.scheduler.PhysicalLossScheduler"><code class="docutils literal notranslate"><span class="pre">PhysicalLossScheduler</span></code></a></li>
 </ul>
 </li>
@@ -82,6 +83,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html">train_main module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tune.html">tune module</a></li>
 </ul>
 </li>
@@ -117,14 +119,179 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="mylib-dataloader-module">
-<h2>mylib.dataloader module<a class="headerlink" href="#mylib-dataloader-module" title="Link to this heading"></a></h2>
+<section id="module-mylib.dataloader">
+<span id="mylib-dataloader-module"></span><h2>mylib.dataloader module<a class="headerlink" href="#module-mylib.dataloader" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.dataloader.</span></span><span class="sig-name descname"><span class="pre">IsingDataLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_spins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_betas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages loading, augmenting, and formatting Ising model datasets for training.</p>
+<p>This class uses memory-mapped numpy arrays to handle the large lattice data memory usage
+without loading it all into RAM at once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_spins</strong> (<em>str</em><em> or </em><em>pathlib.Path</em>) -- Path to the binary file containing the spin lattices.</p></li>
+<li><p><strong>file_betas</strong> (<em>str</em><em> or </em><em>pathlib.Path</em>) -- Path to the binary file containing the beta labels.</p></li>
+<li><p><strong>L</strong> (<em>int</em>) -- The dimension of the square lattice (LxL).</p></li>
+<li><p><strong>N</strong> (<em>int</em>) -- The total number of samples in the dataset.</p></li>
+<li><p><strong>**kwargs</strong> -- Additional keyword arguments.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.cast_to_float32">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">cast_to_float32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.cast_to_float32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.cast_to_float32" title="Link to this definition"></a></dt>
+<dd><p>Casts spins and betas to standard TensorFlow float32 tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>Tensor</em>) -- A batch of spin lattices.</p></li>
+<li><p><strong>betas</strong> (<em>Tensor</em>) -- A batch of beta labels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the casted spins and betas.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.get_betas">
+<span class="sig-name descname"><span class="pre">get_betas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.get_betas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.get_betas" title="Link to this definition"></a></dt>
+<dd><p>Retrieves beta labels for specific indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>indices</strong> (<em>numpy.ndarray</em><em> or </em><em>list</em>) -- The indices of the labels to retrieve.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1D array of beta labels with channel dimension removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.get_spins">
+<span class="sig-name descname"><span class="pre">get_spins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.get_spins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.get_spins" title="Link to this definition"></a></dt>
+<dd><p>Retrieves lattice spin samples for specific indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>indices</strong> (<em>numpy.ndarray</em><em> or </em><em>list</em>) -- The indices of the lattices to retrieve.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>3D array of spin lattices with the channel dimension removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.get_training_data">
+<span class="sig-name descname"><span class="pre">get_training_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.get_training_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.get_training_data" title="Link to this definition"></a></dt>
+<dd><p>Builds standard TensorFlow Datasets for training and validation.</p>
+<p>The datasets are created using stratified splitting to ensure an even
+distribution of beta labels across training and validation sets. Batches
+will contain a random mixture of temperatures. Casting and data augmentation are
+applied on-the-fly</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>split_ratio</strong> (<em>float</em>) -- The proportion of the dataset to include in the train split (e.g., 0.8).</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) -- The number of samples per batch.</p></li>
+<li><p><strong>augment</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Whether to apply random augmentations to the training data.
+Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Two tf.data.Dataset objects (train_data, val_data) ready for model training.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.get_training_data_homogeneous">
+<span class="sig-name descname"><span class="pre">get_training_data_homogeneous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.get_training_data_homogeneous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.get_training_data_homogeneous" title="Link to this definition"></a></dt>
+<dd><p>Builds temperature-homogeneous Datasets for training and validation.</p>
+<p>This function constructs batches where every lattice inside has the same beta
+(temperature) value, useful for calculating batch-wise thermodynamic observables
+(like susceptibility) during training with MMD or Wasserstein losses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>split_ratio</strong> (<em>float</em>) -- The proportion of the dataset to include in the train split.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) -- The number of samples per batch.</p></li>
+<li><p><strong>augment</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Whether to apply random augmentations to the training data.
+Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Two tf.data.Dataset objects (train_data, val_data).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.normalize_array">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">normalize_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.normalize_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.normalize_array" title="Link to this definition"></a></dt>
+<dd><p>Applies min-max normalization to scale an array to the range [0, 1].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>numpy.ndarray</em>) -- The input array.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The normalized array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mylib.dataloader.IsingDataLoader.random_augment">
+<span class="sig-name descname"><span class="pre">random_augment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spins_batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas_batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/dataloader.html#IsingDataLoader.random_augment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.dataloader.IsingDataLoader.random_augment" title="Link to this definition"></a></dt>
+<dd><p>Applies random augmentations to a batch of lattice samples.</p>
+<p>This method exploits the symmetries of the zero-field Ising Hamiltonian.
+It randomly applies global spin inversion and left-right flips, up-down flips,
+and matrix transposition that repdoduce the the dihedral group D4.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins_batch</strong> (<em>Tensor</em>) -- A batch of spin lattices.</p></li>
+<li><p><strong>betas_batch</strong> (<em>Tensor</em>) -- A batch of beta labels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the augmented spin batch and the unmodified beta batch.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="module-mylib.layers">
 <span id="mylib-layers-module"></span><h2>mylib.layers module<a class="headerlink" href="#module-mylib.layers" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="mylib.layers.FiLMLayer">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.layers.</span></span><span class="sig-name descname"><span class="pre">FiLMLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/layers.html#FiLMLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.layers.FiLMLayer" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.layers.</span></span><span class="sig-name descname"><span class="pre">FiLMLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/layers.html#FiLMLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.layers.FiLMLayer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Layer</span></code></p>
 <p>Applies Feature-wise Linear Modulation (FiLM) to input features.</p>
 <p>This layer conditions a neural network by applying an affine transformation
@@ -148,12 +315,10 @@ of the conditioning MLP. Defaults to 32.</p></li>
 <dd><p>Applies the FiLM modulation to the feature maps.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>inputs</strong> (<em>tuple</em>) -- <p>A tuple containing two Tensors:
-- x_features (Tensor): The 4D convolutional feature maps to modulate</p>
-<blockquote>
-<div><p>with shape <cite>(batch_size, height, width, channels)</cite>.</p>
-</div></blockquote>
+<dd class="field-odd"><p><strong>inputs</strong> (<em>tuple</em>) -- <p>A tuple containing two Tensors:</p>
 <ul class="simple">
+<li><p>x_features (Tensor): The 4D convolutional feature maps to modulate
+with shape <cite>(batch_size, height, width, channels)</cite>.</p></li>
 <li><p>beta (Tensor): The conditioning variable (e.g., temperature labels).</p></li>
 </ul>
 </p>
@@ -185,11 +350,11 @@ of the conditioning MLP. Defaults to 32.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mylib.layers.PeriodicPadding2D">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.layers.</span></span><span class="sig-name descname"><span class="pre">PeriodicPadding2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/layers.html#PeriodicPadding2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.layers.PeriodicPadding2D" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.layers.</span></span><span class="sig-name descname"><span class="pre">PeriodicPadding2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/layers.html#PeriodicPadding2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.layers.PeriodicPadding2D" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Layer</span></code></p>
 <p>Applies periodic padding to a 2D input tensor.</p>
 <p>This layer periodically padds the input tensor by copying and concatenating
-the opposite ends of each tensor dimension to each other.
+the opposite ends of each tensor row/column to each other.
 The amount of padding is dynamically calculated to mimic Keras' standard
 'same' padding behavior based on the provided kernel size and strides.</p>
 <dl class="field-list simple">
@@ -243,7 +408,7 @@ that will follow this layer. Defaults to 1.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mylib.layers.Sampling">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.layers.</span></span><span class="sig-name descname"><span class="pre">Sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/layers.html#Sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.layers.Sampling" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.layers.</span></span><span class="sig-name descname"><span class="pre">Sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/layers.html#Sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.layers.Sampling" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Layer</span></code></p>
 <p>Performs the reparameterization trick for Variational Autoencoders.</p>
 <p>This layer takes the mean and log-variance from the encoder and samples
@@ -266,9 +431,12 @@ During inference, it deterministically returns the mean.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> (<em>tuple</em>) -- A tuple containing two Tensors:
-- z_mean (Tensor): The mean of the latent distribution.
-- z_log_var (Tensor): The log-variance of the latent distribution.</p></li>
+<li><p><strong>inputs</strong> (<em>tuple</em>) -- <p>A tuple containing two Tensors:</p>
+<ul>
+<li><p>z_mean (Tensor): The mean of the latent distribution.</p></li>
+<li><p>z_log_var (Tensor): The log-variance of the latent distribution.</p></li>
+</ul>
+</p></li>
 <li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Whether the layer is in training or inference mode.
 Defaults to False.</p></li>
 </ul>
@@ -303,7 +471,7 @@ Defaults to False.</p></li>
 <span id="mylib-model-module"></span><h2>mylib.model module<a class="headerlink" href="#module-mylib.model" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="mylib.model.CVAE">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.model.</span></span><span class="sig-name descname"><span class="pre">CVAE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/model.html#CVAE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.model.CVAE" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.model.</span></span><span class="sig-name descname"><span class="pre">CVAE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/model.html#CVAE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.model.CVAE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>A Physics-Informed Conditional Variational Autoencoder for the Ising Model.</p>
 <p>This model generates 2D spin lattice configurations conditioned on an inverse
@@ -348,8 +516,8 @@ and training settings (e.g., L, latent_dim, enc_filters, mlp_units, alpha).</p><
 divergence. If <cite>use_physics_loss</cite> is enabled, it computes differences in energy
 and magnetization. If <cite>use_gumbel</cite> is enabled, discrete variables are relaxed
 using the Gumbel-Softmax trick:
-$y = sigma((x + epsilon) /    au)$
-where $epsilon sim    ext{Logistic}(0, 1)$ and $      au$ is the temperature.</p>
+$y = sigma((x + epsilon) / tau)$
+where $epsilon sim text{Logistic}(0, 1)$ and $tau$ is the temperature.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -370,26 +538,28 @@ appended if physics losses are active).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mylib.model.CVAE.energy">
 <span class="sig-name descname"><span class="pre">energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/model.html#CVAE.energy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.model.CVAE.energy" title="Link to this definition"></a></dt>
-<dd><dl>
-<dt>Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with</dt><dd><p>periodic boundary coditions.</p>
-<p>$E = -J sum_{langle i, j</p>
+<dd><p>Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with
+periodic boundary coditions.</p>
+<p>$E = -J sum_{langle i, j rangle} s_i s_j$</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>Tensor</em>) -- A batch of spin lattices in the domain [0, 1].</p></li>
+<li><p><strong>J</strong> (<em>float</em><em>, </em><em>optional</em>) -- Ferromagnetic coupling constant. Defaults to 1.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A 1D tensor representing the energy per sample.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
-<p>angle} s_i s_j$</p>
-<blockquote>
-<div><dl class="simple">
-<dt>Args:</dt><dd><p>spins (Tensor): A batch of spin lattices in the domain [0, 1].
-J (float, optional): Ferromagnetic coupling constant. Defaults to 1.0.</p>
-</dd>
-<dt>Returns:</dt><dd><p>Tensor: A 1D tensor representing the energy per sample.</p>
-</dd>
-</dl>
-</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mylib.model.CVAE.from_config">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/model.html#CVAE.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.model.CVAE.from_config" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/model.html#CVAE.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.model.CVAE.from_config" title="Link to this definition"></a></dt>
 <dd><p>Instantiates the model from a serialization configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -476,7 +646,7 @@ stochastic generation. Defaults to False.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="mylib.model.CVAE.metrics">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#mylib.model.CVAE.metrics" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#mylib.model.CVAE.metrics" title="Link to this definition"></a></dt>
 <dd><p>Returns the list of Keras metrics tracked by the model.</p>
 </dd></dl>
 
@@ -584,47 +754,27 @@ of Gaussian kernels $k(x, y) = exp(-gamma ||x - y||^2)$.</p>
 <section id="module-mylib.observables">
 <span id="mylib-observables-module"></span><h2>mylib.observables module<a class="headerlink" href="#module-mylib.observables" title="Link to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="mylib.observables.binder_cumulant">
-<span class="sig-prename descclassname"><span class="pre">mylib.observables.</span></span><span class="sig-name descname"><span class="pre">binder_cumulant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/observables.html#binder_cumulant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.observables.binder_cumulant" title="Link to this definition"></a></dt>
-<dd><p>Calculates Binder cumulant for a given dataset.</p>
-<blockquote>
-<div><p>The Binder cumulant is:
-$U_L = 1 -</p>
-</div></blockquote>
-<dl>
-<dt>rac{mu_4}{3 mu_2^2}$</dt><dd><p>with $mu_n$ the n-th central moment of the data.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>data (numpy.ndarray): 1D array of observables (usually magnetization).</p>
-</dd>
-<dt>Returns:</dt><dd><p>float: The computed Binder cumulant.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="mylib.observables.energy">
 <span class="sig-prename descclassname"><span class="pre">mylib.observables.</span></span><span class="sig-name descname"><span class="pre">energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/observables.html#energy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.observables.energy" title="Link to this definition"></a></dt>
 <dd><p>Calculates the energy per spin of a 2D square Ising lattice.</p>
-<blockquote>
-<div><p>Computes the standard nearest-neighbor Ising Hamiltonian with periodic
+<p>Computes the standard nearest-neighbor Ising Hamiltonian with periodic
 boundary conditions:
-$E = -J sum_{langle i, j</p>
-</div></blockquote>
-<p>angle} s_i s_j$.</p>
-<blockquote>
-<div><dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>spins (numpy.ndarray): 3D array of spin configurations with shape</dt><dd><p><cite>(N, L, L)</cite> containing values of 0 or 1.</p>
+$E = -J sum_{langle i, j rangle} s_i s_j$.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>numpy.ndarray</em>) -- 3D array of spin configurations with shape
+<cite>(N, L, L)</cite> containing values of 0 or 1.</p></li>
+<li><p><strong>J</strong> (<em>float</em><em>, </em><em>optional</em>) -- The ferromagnetic coupling constant. Defaults to 1.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1D array of energy values per spin for each lattice.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
 </dd>
 </dl>
-<p>J (float, optional): The ferromagnetic coupling constant. Defaults to 1.0.</p>
-</dd>
-<dt>Returns:</dt><dd><p>numpy.ndarray: 1D array of energy values per spin for each lattice.</p>
-</dd>
-</dl>
-</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -656,8 +806,8 @@ values and values are 1D arrays of the computed observables for that beta.</p>
 Magnetic Susceptibility ($chi$), Specific Heat (C), and Binder Cumulant (bc).
 Susceptibility and spcific heat are calculated using the fluctuation-dissipation
 theorem:</p>
-<p>$chi = L^2 eta    ext{Var}(M)$
-$C = L^2 eta^2     ext{Var}(E)$</p>
+<p>$chi = L^2 beta text{Var}(M)$
+$C = L^2 beta^2 text{Var}(E)$</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -682,7 +832,7 @@ contains a sub-dictionary with 'val' (the mean values) and 'err'
 <span class="sig-prename descclassname"><span class="pre">mylib.observables.</span></span><span class="sig-name descname"><span class="pre">jackknife</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/observables.html#jackknife"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.observables.jackknife" title="Link to this definition"></a></dt>
 <dd><p>Calculates the standard error of observables using Jackknife resampling.</p>
 <p>The standard error is computed using the jackknife variance formula:
-$epsilon = sqrt{(n-1)     ext{Var}(       ext{samples})}$.</p>
+$epsilon = sqrt{(n-1) text{Var}(text{samples})}$.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> (<em>numpy.ndarray</em>) -- 1D array of raw measurements.</p>
@@ -692,7 +842,6 @@ $epsilon = sqrt{(n-1)     ext{Var}(       ext{samples})}$.</p>
 <dt>A tuple containing the standard errors (float) for:</dt><dd><ul class="simple">
 <li><p>mean_err: Error of the mean.</p></li>
 <li><p>var_err: Error of the variance.</p></li>
-<li><p>bc_err: Error of the Binder cumulant.</p></li>
 </ul>
 </dd>
 </dl>
@@ -707,10 +856,10 @@ $epsilon = sqrt{(n-1)     ext{Var}(       ext{samples})}$.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mylib.observables.jackknife_samples">
 <span class="sig-prename descclassname"><span class="pre">mylib.observables.</span></span><span class="sig-name descname"><span class="pre">jackknife_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/observables.html#jackknife_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.observables.jackknife_samples" title="Link to this definition"></a></dt>
-<dd><p>Generates jackknife samples for mean, variance, and Binder cumulant.</p>
+<dd><p>Generates jackknife samples for mean and variance.</p>
 <p>This function calculates the &quot;leave-one-out&quot; jackknife estimates for the
-first, second, and fourth moments of a given dataset, which are then used
-to calculate the sample mean, variance, and Binder cumulant.</p>
+first and second moments of a given dataset, which are then used to calculate
+the sample mean and variance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> (<em>numpy.ndarray</em>) -- 1D array of observable data (e.g., magnetization or energy).</p>
@@ -720,7 +869,6 @@ to calculate the sample mean, variance, and Binder cumulant.</p>
 <dt>A tuple containing three 1D numpy arrays:</dt><dd><ul class="simple">
 <li><p>jk_mean: Jackknife samples of the mean.</p></li>
 <li><p>jk_var: Jackknife samples of the variance.</p></li>
-<li><p>jk_bc: Jackknife samples of the Binder cumulant.</p></li>
 </ul>
 </dd>
 </dl>
@@ -789,7 +937,7 @@ Specific Heat, and the Binder Cumulant.</p>
 <span id="mylib-scheduler-module"></span><h2>mylib.scheduler module<a class="headerlink" href="#module-mylib.scheduler" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="mylib.scheduler.GumbelScheduler">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.scheduler.</span></span><span class="sig-name descname"><span class="pre">GumbelScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_tau</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tau</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#GumbelScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.GumbelScheduler" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.scheduler.</span></span><span class="sig-name descname"><span class="pre">GumbelScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schedule_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#GumbelScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.GumbelScheduler" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></p>
 <p>Anneals the temperature parameter (tau) for a Gumbel-Softmax distribution.</p>
 <p>Exponentially decays the temperature parameter of the model's
@@ -820,60 +968,8 @@ Gumbel-Softmax layer at the end of each epoch, stopping at a specified minimum.<
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="mylib.scheduler.KLAnnealing">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.scheduler.</span></span><span class="sig-name descname"><span class="pre">KLAnnealing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kl_weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rampup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#KLAnnealing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.KLAnnealing" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="mylib.scheduler.KLAnnealing.on_epoch_end">
-<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#KLAnnealing.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.KLAnnealing.on_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Called at the end of an epoch.</p>
-<p>Subclasses should override for any actions to run. This function should
-only be called during TRAIN mode.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>epoch</strong> -- Integer, index of epoch.</p></li>
-<li><p><strong>logs</strong> -- Dict, metric results for this training epoch, and for the
-validation epoch if validation is performed. Validation result
-keys are prefixed with <cite>val_</cite>. For training epoch, the values of
-the <cite>Model</cite>'s metrics are returned. Example:
-<cite>{'loss': 0.2, 'accuracy': 0.7}</cite>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mylib.scheduler.KLAnnealingCapacity">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.scheduler.</span></span><span class="sig-name descname"><span class="pre">KLAnnealingCapacity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capacity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_capacity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rampup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#KLAnnealingCapacity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.KLAnnealingCapacity" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="mylib.scheduler.KLAnnealingCapacity.on_epoch_end">
-<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#KLAnnealingCapacity.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.KLAnnealingCapacity.on_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Called at the end of an epoch.</p>
-<p>Subclasses should override for any actions to run. This function should
-only be called during TRAIN mode.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>epoch</strong> -- Integer, index of epoch.</p></li>
-<li><p><strong>logs</strong> -- Dict, metric results for this training epoch, and for the
-validation epoch if validation is performed. Validation result
-keys are prefixed with <cite>val_</cite>. For training epoch, the values of
-the <cite>Model</cite>'s metrics are returned. Example:
-<cite>{'loss': 0.2, 'accuracy': 0.7}</cite>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="mylib.scheduler.PhysicalLossScheduler">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.scheduler.</span></span><span class="sig-name descname"><span class="pre">PhysicalLossScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_epoch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#PhysicalLossScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.PhysicalLossScheduler" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mylib.scheduler.</span></span><span class="sig-name descname"><span class="pre">PhysicalLossScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hparams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/scheduler.html#PhysicalLossScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.scheduler.PhysicalLossScheduler" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></p>
 <p>Activates physical loss components at a designated training epoch.</p>
 <p>Waits for a specific epoch to begin, and then assigns the
@@ -910,7 +1006,7 @@ magnetization and energy) in the model.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="analysis.html" class="btn btn-neutral float-left" title="analysis module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="analysis_main.html" class="btn btn-neutral float-left" title="analysis_main module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="train.html" class="btn btn-neutral float-right" title="train module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

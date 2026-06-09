@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="y" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mylib.dataloader &mdash; CMEP project 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=be683c08"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            CMEP project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CMEP project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mylib.dataloader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mylib.dataloader</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorflow.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span>
+
+
+<div class="viewcode-block" id="IsingDataLoader">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IsingDataLoader</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages loading, augmenting, and formatting Ising model datasets for training.</span>
+
+<span class="sd">    This class uses memory-mapped numpy arrays to handle the large lattice data memory usage</span>
+<span class="sd">    without loading it all into RAM at once.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file_spins (str or pathlib.Path): Path to the binary file containing the spin lattices.</span>
+<span class="sd">        file_betas (str or pathlib.Path): Path to the binary file containing the beta labels.</span>
+<span class="sd">        L (int): The dimension of the square lattice (LxL).</span>
+<span class="sd">        N (int): The total number of samples in the dataset.</span>
+<span class="sd">        **kwargs: Additional keyword arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_spins</span><span class="p">,</span> <span class="n">file_betas</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">file_spins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">betas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">file_betas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">L</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">N</span>
+
+<div class="viewcode-block" id="IsingDataLoader.get_betas">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.get_betas">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_betas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves beta labels for specific indices.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            indices (numpy.ndarray or list): The indices of the labels to retrieve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy.ndarray: 1D array of beta labels with channel dimension removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">betas</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IsingDataLoader.get_spins">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.get_spins">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves lattice spin samples for specific indices.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            indices (numpy.ndarray or list): The indices of the lattices to retrieve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy.ndarray: 3D array of spin lattices with the channel dimension removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IsingDataLoader.normalize_array">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.normalize_array">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_array</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies min-max normalization to scale an array to the range [0, 1].</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (numpy.ndarray): The input array.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy.ndarray: The normalized array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="nb">min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">max</span><span class="o">-</span><span class="nb">min</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IsingDataLoader.cast_to_float32">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.cast_to_float32">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cast_to_float32</span><span class="p">(</span><span class="n">spins</span><span class="p">,</span> <span class="n">betas</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Casts spins and betas to standard TensorFlow float32 tensors.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            spins (Tensor): A batch of spin lattices.</span>
+<span class="sd">            betas (Tensor): A batch of beta labels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing the casted spins and betas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">spins</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IsingDataLoader.random_augment">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.random_augment">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">random_augment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spins_batch</span><span class="p">,</span> <span class="n">betas_batch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies random augmentations to a batch of lattice samples.</span>
+
+<span class="sd">        This method exploits the symmetries of the zero-field Ising Hamiltonian. </span>
+<span class="sd">        It randomly applies global spin inversion and left-right flips, up-down flips, </span>
+<span class="sd">        and matrix transposition that repdoduce the the dihedral group D4.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            spins_batch (Tensor): A batch of spin lattices.</span>
+<span class="sd">            betas_batch (Tensor): A batch of beta labels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing the augmented spin batch and the unmodified beta batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">spins_batch</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="c1"># Random spin inversion (Z2 symmetry)</span>
+        <span class="n">invert_mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">([</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">inverted_spins</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">spins_batch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-</span> <span class="n">spins_batch</span>
+        <span class="n">spins_batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">invert_mask</span><span class="p">,</span> <span class="n">inverted_spins</span><span class="p">,</span> <span class="n">spins_batch</span><span class="p">)</span>
+
+        <span class="c1"># Random left-right flip</span>
+        <span class="n">lr_mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">([</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">spins_batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">lr_mask</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">flip_left_right</span><span class="p">(</span><span class="n">spins_batch</span><span class="p">),</span> <span class="n">spins_batch</span><span class="p">)</span>
+
+        <span class="c1"># Random up-down flip</span>
+        <span class="n">ud_mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">([</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">spins_batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ud_mask</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">flip_up_down</span><span class="p">(</span><span class="n">spins_batch</span><span class="p">),</span> <span class="n">spins_batch</span><span class="p">)</span>
+
+        <span class="c1"># Random transpose (diagonal reflection)</span>
+        <span class="n">tp_mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">([</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">transposed_spins</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">spins_batch</span><span class="p">,</span> <span class="n">perm</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="n">spins_batch</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tp_mask</span><span class="p">,</span> <span class="n">transposed_spins</span><span class="p">,</span> <span class="n">spins_batch</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">spins_batch</span><span class="p">,</span> <span class="n">betas_batch</span></div>
+
+
+    
+<div class="viewcode-block" id="IsingDataLoader.get_training_data">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.get_training_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_training_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds standard TensorFlow Datasets for training and validation.</span>
+
+<span class="sd">        The datasets are created using stratified splitting to ensure an even </span>
+<span class="sd">        distribution of beta labels across training and validation sets. Batches </span>
+<span class="sd">        will contain a random mixture of temperatures. Casting and data augmentation are</span>
+<span class="sd">        applied on-the-fly </span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            split_ratio (float): The proportion of the dataset to include in the train split (e.g., 0.8).</span>
+<span class="sd">            batch_size (int): The number of samples per batch.</span>
+<span class="sd">            augment (bool, optional): Whether to apply random augmentations to the training data. </span>
+<span class="sd">                Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Two tf.data.Dataset objects (train_data, val_data) ready for model training.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#stratified split indices for training/validation</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">betas_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">betas</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">beta_category</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">betas_norm</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">train_idx</span><span class="p">,</span> <span class="n">val_idx</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="n">split_ratio</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">beta_category</span><span class="p">)</span>
+
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">[</span><span class="n">train_idx</span><span class="p">],</span> <span class="n">betas_norm</span><span class="p">[</span><span class="n">train_idx</span><span class="p">]))</span>
+        <span class="n">val_data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">[</span><span class="n">val_idx</span><span class="p">],</span> <span class="n">betas_norm</span><span class="p">[</span><span class="n">val_idx</span><span class="p">]))</span>
+        
+        <span class="c1"># Load full dataset into a buffer to shuffle per epoch and batch</span>
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">train_idx</span><span class="p">))</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">val_data</span> <span class="o">=</span> <span class="n">val_data</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">augment</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">train_data</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_augment</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cast_to_float32</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+        <span class="n">val_data</span> <span class="o">=</span> <span class="n">val_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cast_to_float32</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+
+        <span class="c1"># Prefetch </span>
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+        <span class="n">val_data</span> <span class="o">=</span> <span class="n">val_data</span><span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">val_data</span></div>
+
+    
+<div class="viewcode-block" id="IsingDataLoader.get_training_data_homogeneous">
+<a class="viewcode-back" href="../../mylib.html#mylib.dataloader.IsingDataLoader.get_training_data_homogeneous">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_training_data_homogeneous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds temperature-homogeneous Datasets for training and validation.</span>
+
+<span class="sd">        This function constructs batches where every lattice inside has the same beta </span>
+<span class="sd">        (temperature) value, useful for calculating batch-wise thermodynamic observables </span>
+<span class="sd">        (like susceptibility) during training with MMD or Wasserstein losses.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            split_ratio (float): The proportion of the dataset to include in the train split.</span>
+<span class="sd">            batch_size (int): The number of samples per batch.</span>
+<span class="sd">            augment (bool, optional): Whether to apply random augmentations to the training data. </span>
+<span class="sd">                Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Two tf.data.Dataset objects (train_data, val_data).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">betas_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">betas</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">beta_category</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">betas_norm</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">train_idx</span><span class="p">,</span> <span class="n">val_idx</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="n">split_ratio</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">beta_category</span><span class="p">)</span>
+
+        <span class="c1"># pure batching help function</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">build_pure_dataset</span><span class="p">(</span><span class="n">idx_array</span><span class="p">,</span> <span class="n">is_training</span><span class="p">):</span>
+            <span class="n">unique_cats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">beta_category</span><span class="p">[</span><span class="n">idx_array</span><span class="p">])</span>
+            <span class="n">combined_ds</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">total_batches</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="n">unique_cats</span><span class="p">:</span>
+                <span class="n">cat_idx</span> <span class="o">=</span> <span class="n">idx_array</span><span class="p">[</span><span class="n">beta_category</span><span class="p">[</span><span class="n">idx_array</span><span class="p">]</span> <span class="o">==</span> <span class="n">cat</span><span class="p">]</span>
+                
+                <span class="n">ds</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">[</span><span class="n">cat_idx</span><span class="p">],</span> <span class="n">betas_norm</span><span class="p">[</span><span class="n">cat_idx</span><span class="p">]))</span>
+                
+                <span class="k">if</span> <span class="n">is_training</span><span class="p">:</span>
+                    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cat_idx</span><span class="p">))</span>
+                    <span class="n">total_batches</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cat_idx</span><span class="p">)</span> <span class="o">//</span> <span class="n">batch_size</span>
+
+                <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">drop_remainder</span><span class="o">=</span><span class="n">is_training</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">combined_ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">combined_ds</span> <span class="o">=</span> <span class="n">ds</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">combined_ds</span> <span class="o">=</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">is_training</span> <span class="ow">and</span> <span class="n">total_batches</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">combined_ds</span> <span class="o">=</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">total_batches</span><span class="p">)</span>
+                
+            <span class="c1"># 6. Apply augmentation and map functions</span>
+            <span class="k">if</span> <span class="n">is_training</span> <span class="ow">and</span> <span class="n">augment</span><span class="p">:</span>
+                <span class="n">combined_ds</span> <span class="o">=</span> <span class="n">combined_ds</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_augment</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+                
+            <span class="k">return</span> <span class="n">combined_ds</span>
+
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">build_pure_dataset</span><span class="p">(</span><span class="n">train_idx</span><span class="p">,</span> <span class="n">is_training</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">val_data</span> <span class="o">=</span> <span class="n">build_pure_dataset</span><span class="p">(</span><span class="n">val_idx</span><span class="p">,</span> <span class="n">is_training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cast_to_float32</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+        <span class="n">val_data</span> <span class="o">=</span> <span class="n">val_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cast_to_float32</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">train_data</span><span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">),</span> <span class="n">val_data</span><span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AUTOTUNE</span><span class="p">)</span></div>
+</div>
+
+    
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">print_memory_usage</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span>
+        <span class="n">mem_mb</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">] RAM Usage: </span><span class="si">{</span><span class="n">mem_mb</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
+    
+    <span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="mi">20000</span>
+    <span class="n">split_ratio</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">buffer_size</span> <span class="o">=</span> <span class="n">N</span><span class="o">*</span><span class="n">split_ratio</span>
+    <span class="n">augment</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">norm_array</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="nb">min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">max</span><span class="o">-</span><span class="nb">min</span><span class="p">)</span>
+    
+    <span class="n">print_memory_usage</span><span class="p">(</span><span class="s2">&quot;before any data&quot;</span><span class="p">)</span>
+    <span class="n">betas_list</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">norm_array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">betas_list</span><span class="p">)))</span>
+    <span class="n">samples_per_beta</span> <span class="o">=</span> <span class="n">N</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">betas_list</span><span class="p">)</span>
+    <span class="n">betas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">betas_list</span><span class="p">,</span> <span class="n">samples_per_beta</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
+    <span class="n">spins</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">print_memory_usage</span><span class="p">(</span><span class="s2">&quot;After spins &amp; betas&quot;</span><span class="p">)</span>
+
+    <span class="n">ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+    <span class="n">spins_file</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;data/ising_test_spins_L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">_N=</span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2">.bin&quot;</span>
+    <span class="n">betas_file</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;data/ising_test_betas_L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">_N=</span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2">.bin&quot;</span>
+
+    <span class="n">spins</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">spins_file</span><span class="p">)</span>
+    <span class="n">betas</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">betas_file</span><span class="p">)</span>
+    
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">IsingDataLoader</span><span class="p">(</span><span class="n">spins_file</span><span class="p">,</span> <span class="n">betas_file</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+    <span class="n">all_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="n">print_memory_usage</span><span class="p">(</span><span class="s2">&quot;before loaded spins &amp; betas&quot;</span><span class="p">)</span>
+    <span class="n">spins_loaded</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">get_spins</span><span class="p">(</span><span class="n">all_indices</span><span class="p">)</span>
+    <span class="n">betas_loaded</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">get_betas</span><span class="p">(</span><span class="n">all_indices</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">spins_loaded</span><span class="p">)</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">betas_loaded</span><span class="p">)</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="n">print_memory_usage</span><span class="p">(</span><span class="s2">&quot;after loaded spins &amp; betas&quot;</span><span class="p">)</span>
+
+    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span> <span class="c1"># Force Python to clean up temp buffers</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># Give the OS a second to settle the Page Cache</span>
+
+    <span class="n">print_memory_usage</span><span class="p">(</span><span class="s2">&quot;After settling&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">spins_loaded</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">betas</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">betas_loaded</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">betas_loaded</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span><span class="n">sl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">spins</span><span class="p">,</span> <span class="n">spins_loaded</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">sl</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">),</span> <span class="s2">&quot;Spins did not load correctly.&quot;</span>
+    <span class="k">for</span> <span class="n">b</span><span class="p">,</span><span class="n">bl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">betas</span><span class="p">,</span> <span class="n">betas_loaded</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">sl</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">),</span> <span class="s2">&quot;Betas did not load correctly.&quot;</span>
+
+    <span class="n">train_data</span><span class="p">,</span> <span class="n">val_data</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">get_training_data</span><span class="p">(</span><span class="n">split_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">augment</span><span class="p">)</span>
+    <span class="n">print_memory_usage</span><span class="p">(</span><span class="s2">&quot;after get training data&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">spins_batch</span><span class="p">,</span> <span class="n">labels_batch</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_data</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="mi">5</span><span class="p">)):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Batch </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spins Batch Shape:  </span><span class="si">{</span><span class="n">spins_batch</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Labels Batch Shape: </span><span class="si">{</span><span class="n">labels_batch</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">betas_numpy</span> <span class="o">=</span> <span class="n">labels_batch</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">unique_betas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">betas_numpy</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unique beta values: </span><span class="si">{</span><span class="n">unique_betas</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, John Smith.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

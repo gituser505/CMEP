@@ -7,19 +7,20 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>tune module &mdash; CMEP project 1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=be683c08"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="train module" href="train.html" /> 
+    <link rel="prev" title="train_main module" href="train_main.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,9 +46,16 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html">analysis_main module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mylib.html">mylib package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">tune module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html">train_main module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tune module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tune.get_baseline"><code class="docutils literal notranslate"><span class="pre">get_baseline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tune.objective"><code class="docutils literal notranslate"><span class="pre">objective()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tune.suggestions"><code class="docutils literal notranslate"><span class="pre">suggestions()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -77,15 +85,92 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="tune-module">
-<h1>tune module<a class="headerlink" href="#tune-module" title="Link to this heading"></a></h1>
+  <section id="module-tune">
+<span id="tune-module"></span><h1>tune module<a class="headerlink" href="#module-tune" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="tune.get_baseline">
+<span class="sig-prename descclassname"><span class="pre">tune.</span></span><span class="sig-name descname"><span class="pre">get_baseline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tune.html#get_baseline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tune.get_baseline" title="Link to this definition"></a></dt>
+<dd><p>Extracts baseline physical observables from the validation dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val_data</strong> (<em>tf.data.Dataset</em>) -- The validation dataset containing batches of
+(spins, betas_norm) tensors.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing:</dt><dd><ul class="simple">
+<li><p>observables (dict): A dictionary mapping unique beta values to their
+corresponding true 'M' (magnetization) and 'E' (energy) values.</p></li>
+<li><p>samples_per_beta (int): The number of lattice samples per unique beta.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tune.objective">
+<span class="sig-prename descclassname"><span class="pre">tune.</span></span><span class="sig-name descname"><span class="pre">objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ising_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_beta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tune.html#objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tune.objective" title="Link to this definition"></a></dt>
+<dd><p>The Optuna objective function for tuning the CVAE model.</p>
+<p>This function manages a complete training lifecycle for a single trial:
+it sets up the hyperparameters, compiles the model, trains it, and evaluates
+its generative capability according to a physics loss function:</p>
+<div class="math notranslate nohighlight">
+\[\text{error} = \sum_{\beta} \left( \frac{|M_{true} - M_{gen}|}{|M_{true}|} + \frac{|E_{true} - E_{gen}|}{|E_{true}|} \right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trial</strong> (<em>optuna.trial.Trial</em>) -- The current Optuna trial object.</p></li>
+<li><p><strong>base_config</strong> (<em>dict</em>) -- The base configuration dictionary containing standard
+hyperparameters, training parameters, and scheduler settings.</p></li>
+<li><p><strong>train_data</strong> (<em>tf.data.Dataset</em>) -- The dataset used for training.</p></li>
+<li><p><strong>val_data</strong> (<em>tf.data.Dataset</em>) -- The dataset used for validation.</p></li>
+<li><p><strong>ising_obs</strong> (<em>dict</em>) -- Baseline physical observables computed from <cite>get_baseline</cite>.</p></li>
+<li><p><strong>samples_per_beta</strong> (<em>int</em>) -- The number of samples to generate per beta for evaluation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The total accumulated physical error (relative deviation from the baseline).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tune.suggestions">
+<span class="sig-prename descclassname"><span class="pre">tune.</span></span><span class="sig-name descname"><span class="pre">suggestions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tune.html#suggestions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tune.suggestions" title="Link to this definition"></a></dt>
+<dd><p>Dynamically samples hyperparameters using Optuna based on a configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trial</strong> (<em>optuna.trial.Trial</em>) -- The current Optuna trial object.</p></li>
+<li><p><strong>search_space_dict</strong> (<em>dict</em>) -- A dictionary defining the hyperparameter search
+space. Keys starting with an underscore are ignored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary of sampled hyperparameter values for the current trial.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="train.html" class="btn btn-neutral float-left" title="train module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="train_main.html" class="btn btn-neutral float-left" title="train_main module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

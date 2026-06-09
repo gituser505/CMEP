@@ -7,20 +7,20 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>src &mdash; CMEP project 1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=be683c08"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="analysis module" href="analysis.html" />
-    <link rel="prev" title="CMEP project documentation" href="index.html" /> 
+    <link rel="prev" title="CMEPDA project documentation" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,8 +46,10 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">src</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html">analysis_main module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mylib.html">mylib package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html">train_main module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tune.html">tune module</a></li>
 </ul>
 </li>
@@ -81,10 +83,37 @@
 <h1>src<a class="headerlink" href="#src" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="analysis.html">analysis module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">analysis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#analysis.norm_array"><code class="docutils literal notranslate"><span class="pre">norm_array()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis_main.html">analysis_main module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.norm_array"><code class="docutils literal notranslate"><span class="pre">norm_array()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.plot_generated_samples"><code class="docutils literal notranslate"><span class="pre">plot_generated_samples()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.plot_histograms"><code class="docutils literal notranslate"><span class="pre">plot_histograms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.plot_latent_space"><code class="docutils literal notranslate"><span class="pre">plot_latent_space()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.plot_observables"><code class="docutils literal notranslate"><span class="pre">plot_observables()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.plot_reconstructions"><code class="docutils literal notranslate"><span class="pre">plot_reconstructions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis_main.html#analysis_main.plot_training_losses"><code class="docutils literal notranslate"><span class="pre">plot_training_losses()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="mylib.html">mylib package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="mylib.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mylib.html#mylib-dataloader-module">mylib.dataloader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mylib.html#module-mylib.dataloader">mylib.dataloader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.cast_to_float32"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.cast_to_float32()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.get_betas"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.get_betas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.get_spins"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.get_spins()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.get_training_data"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.get_training_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.get_training_data_homogeneous"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.get_training_data_homogeneous()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.normalize_array"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.normalize_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.dataloader.IsingDataLoader.random_augment"><code class="docutils literal notranslate"><span class="pre">IsingDataLoader.random_augment()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="mylib.html#module-mylib.layers">mylib.layers module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.layers.FiLMLayer"><code class="docutils literal notranslate"><span class="pre">FiLMLayer</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.layers.FiLMLayer.call"><code class="docutils literal notranslate"><span class="pre">FiLMLayer.call()</span></code></a></li>
@@ -124,7 +153,6 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="mylib.html#module-mylib.observables">mylib.observables module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.observables.binder_cumulant"><code class="docutils literal notranslate"><span class="pre">binder_cumulant()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.observables.energy"><code class="docutils literal notranslate"><span class="pre">energy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.observables.get_observable_arrays"><code class="docutils literal notranslate"><span class="pre">get_observable_arrays()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.observables.get_observables"><code class="docutils literal notranslate"><span class="pre">get_observables()</span></code></a></li>
@@ -140,14 +168,6 @@
 <li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.scheduler.GumbelScheduler.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">GumbelScheduler.on_epoch_end()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.scheduler.KLAnnealing"><code class="docutils literal notranslate"><span class="pre">KLAnnealing</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.scheduler.KLAnnealing.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">KLAnnealing.on_epoch_end()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.scheduler.KLAnnealingCapacity"><code class="docutils literal notranslate"><span class="pre">KLAnnealingCapacity</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.scheduler.KLAnnealingCapacity.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">KLAnnealingCapacity.on_epoch_end()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="mylib.html#mylib.scheduler.PhysicalLossScheduler"><code class="docutils literal notranslate"><span class="pre">PhysicalLossScheduler</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="mylib.html#mylib.scheduler.PhysicalLossScheduler.on_epoch_begin"><code class="docutils literal notranslate"><span class="pre">PhysicalLossScheduler.on_epoch_begin()</span></code></a></li>
 </ul>
@@ -158,7 +178,20 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tune.html">tune module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="train_main.html">train_main module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html#train_main.build_callbacks"><code class="docutils literal notranslate"><span class="pre">build_callbacks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html#train_main.build_results_dir"><code class="docutils literal notranslate"><span class="pre">build_results_dir()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html#train_main.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html#train_main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="train_main.html#train_main.save_config"><code class="docutils literal notranslate"><span class="pre">save_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tune.html">tune module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tune.html#tune.get_baseline"><code class="docutils literal notranslate"><span class="pre">get_baseline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tune.html#tune.objective"><code class="docutils literal notranslate"><span class="pre">objective()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tune.html#tune.suggestions"><code class="docutils literal notranslate"><span class="pre">suggestions()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -167,7 +200,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="CMEP project documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="CMEPDA project documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="analysis.html" class="btn btn-neutral float-right" title="analysis module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

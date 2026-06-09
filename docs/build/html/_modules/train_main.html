@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="y" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>train_main &mdash; CMEP project 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=be683c08"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            CMEP project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CMEP project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">train_main</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for train_main</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TF_CPP_MIN_LOG_LEVEL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">k</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">keras.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">keras.callbacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">EarlyStopping</span><span class="p">,</span> <span class="n">ReduceLROnPlateau</span><span class="p">,</span> <span class="n">ModelCheckpoint</span><span class="p">,</span> <span class="n">CSVLogger</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">mylib.dataloader</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingDataLoader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mylib.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CVAE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mylib.scheduler</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysicalLossScheduler</span><span class="p">,</span> <span class="n">GumbelScheduler</span>
+
+<span class="n">ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+
+
+<div class="viewcode-block" id="load_config">
+<a class="viewcode-back" href="../train_main.html#train_main.load_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads the model and training configuration parameters from a JSON file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config_path (str or pathlib.Path): The path to the target JSON configuration file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing parsed configuration and hyperparameter blocks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config</span></div>
+
+
+
+<div class="viewcode-block" id="save_config">
+<a class="viewcode-back" href="../train_main.html#train_main.save_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Saves the current configuration dictionary as an organized JSON file.</span>
+
+<span class="sd">    Maintains reproducibility by archiving an exact copy of the configuration </span>
+<span class="sd">    settings inside the newly generated experiment results folder.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (dict): The configuration dictionary to be archived.</span>
+<span class="sd">        path (pathlib.Path): The target directory where &#39;config.json&#39; will be written.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="o">/</span><span class="s2">&quot;config.json&quot;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_results_dir">
+<a class="viewcode-back" href="../train_main.html#train_main.build_results_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_results_dir</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds a uniquely named experiment results directory with a timestamp.</span>
+
+<span class="sd">    Extracts crucial hyperparameters (latent dimensions, filters, batch size, alpha)</span>
+<span class="sd">    and constructs a descriptive path string, appending physics loss constraints</span>
+<span class="sd">    if active. Automatically handles the parent directory creation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (dict): The full configuration dictionary containing &#39;hyperparams&#39; </span>
+<span class="sd">            and &#39;train_params&#39; blocks.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pathlib.Path: A Path object pointing to the newly initialized directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
+    <span class="n">hp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;hyperparams&#39;</span><span class="p">]</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;train_params&#39;</span><span class="p">]</span>
+    
+    <span class="n">latent_dim</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;latent_dim&#39;</span><span class="p">]</span>
+    <span class="n">enc_filters</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;enc_filters&#39;</span><span class="p">]</span>
+    <span class="n">mlp_units</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;mlp_units&#39;</span><span class="p">]</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">]</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;gamma&#39;</span><span class="p">]</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;delta&#39;</span><span class="p">]</span>
+    <span class="n">use_physics_loss</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;use_physics_loss&#39;</span><span class="p">]</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span>
+
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y_%m_</span><span class="si">%d</span><span class="s2">_%H_%M_%S&quot;</span><span class="p">)</span>
+    <span class="n">config_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;cvae_</span><span class="si">{</span><span class="n">latent_dim</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">enc_filters</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">mlp_units</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">alpha</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">use_physics_loss</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">config_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">gamma</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">delta</span><span class="si">}</span><span class="s2">&quot;</span>
+    
+    <span class="n">config_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">&quot;</span>
+    
+    <span class="n">results_dir</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">/</span><span class="s2">&quot;results&quot;</span><span class="o">/</span><span class="n">data_dir</span><span class="o">/</span><span class="n">config_str</span>
+    <span class="n">results_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results_dir</span></div>
+
+
+
+<div class="viewcode-block" id="build_callbacks">
+<a class="viewcode-back" href="../train_main.html#train_main.build_callbacks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_callbacks</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">results_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assembles the standard and custom Keras training callbacks.</span>
+
+<span class="sd">    Sets up structural training components including early stopping criteria, </span>
+<span class="sd">    learning rate decay on plateaus, checkpoint monitoring for validation loss, </span>
+<span class="sd">    and CSV logging. Dynamically appends scheduling callbacks for physics and </span>
+<span class="sd">    Gumbel constraints if toggled in hyperparameters.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (dict): The complete configuration parameter dictionary.</span>
+<span class="sd">        results_dir (pathlib.Path): The destination directory path where checkpoints </span>
+<span class="sd">            and loss history logs will be saved.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list populated with configured Keras callback objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Unpack model, trainig and scheduler parameters</span>
+    <span class="n">hp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;hyperparams&#39;</span><span class="p">]</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;train_params&#39;</span><span class="p">]</span>
+    <span class="n">sp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;schedule_params&#39;</span><span class="p">]</span>
+    
+    <span class="n">use_physics_loss</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;use_physics_loss&#39;</span><span class="p">]</span>
+    <span class="n">use_gumbel</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;use_gumbel&#39;</span><span class="p">]</span>
+    <span class="n">min_delta</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;min_delta&#39;</span><span class="p">]</span>
+    <span class="n">patience</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;patience&#39;</span><span class="p">]</span>
+    <span class="n">warmup</span> <span class="o">=</span> <span class="n">sp</span><span class="p">[</span><span class="s1">&#39;warmup&#39;</span><span class="p">]</span>
+    <span class="n">rampup</span> <span class="o">=</span> <span class="n">sp</span><span class="p">[</span><span class="s1">&#39;rampup&#39;</span><span class="p">]</span>
+
+    <span class="n">early_stop</span> <span class="o">=</span> <span class="n">EarlyStopping</span><span class="p">(</span>
+        <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_total_loss&#39;</span><span class="p">,</span> 
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;min&#39;</span><span class="p">,</span>
+        <span class="n">patience</span><span class="o">=</span><span class="n">patience</span><span class="p">,</span>
+        <span class="n">start_from_epoch</span><span class="o">=</span><span class="n">warmup</span><span class="o">+</span><span class="n">rampup</span><span class="p">,</span>
+        <span class="n">min_delta</span><span class="o">=</span><span class="n">min_delta</span><span class="p">,</span> 
+        <span class="n">restore_best_weights</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+    
+    <span class="n">reduce_lr</span> <span class="o">=</span> <span class="n">ReduceLROnPlateau</span><span class="p">(</span>
+        <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_total_loss&#39;</span><span class="p">,</span> 
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;min&#39;</span><span class="p">,</span>
+        <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> 
+        <span class="n">patience</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">cooldown</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+        <span class="n">min_lr</span><span class="o">=</span><span class="mf">1e-7</span> <span class="p">)</span>
+    
+    <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">ModelCheckpoint</span><span class="p">(</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">results_dir</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;cvae.keras&quot;</span><span class="p">),</span>
+        <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_total_loss&#39;</span><span class="p">,</span> 
+        <span class="n">save_best_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">save_weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+        <span class="n">save_freq</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> 
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;min&#39;</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">history_csv</span> <span class="o">=</span> <span class="n">CSVLogger</span><span class="p">(</span><span class="n">results_dir</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;history.csv&quot;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">callbacks</span> <span class="o">=</span> <span class="p">[</span><span class="n">early_stop</span><span class="p">,</span> <span class="n">reduce_lr</span><span class="p">,</span> <span class="n">checkpoint</span><span class="p">,</span> <span class="n">history_csv</span><span class="p">]</span>
+
+    <span class="c1"># Add scheduler</span>
+    <span class="k">if</span> <span class="n">use_physics_loss</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PhysicalLossScheduler</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">sp</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">use_gumbel</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">GumbelScheduler</span><span class="p">(</span><span class="n">sp</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">callbacks</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../train_main.html#train_main.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main execution function to initialize and run CVAE model training.</span>
+
+<span class="sd">    Parses configuration inputs, configures deterministic global seeds, loads </span>
+<span class="sd">    Ising model binary datasets, instantiates the CVAE architecture, builds the </span>
+<span class="sd">    callback routine array, executes the training fit process, and logs the latest </span>
+<span class="sd">    valid run path tracking token.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Train CVAE model&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of JSON file&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">ROOT</span><span class="o">/</span><span class="s2">&quot;config&quot;</span><span class="o">/</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+    <span class="n">results_dir</span> <span class="o">=</span> <span class="n">build_results_dir</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+    <span class="n">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">results_dir</span><span class="p">)</span>
+
+    <span class="c1"># Unpack model, trainig and scheduler parameters</span>
+    <span class="n">hp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;hyperparams&#39;</span><span class="p">]</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;train_params&#39;</span><span class="p">]</span>
+    
+    <span class="n">L</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]</span>   
+    <span class="n">N</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]</span>
+    <span class="n">split_ratio</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;split_ratio&#39;</span><span class="p">]</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">]</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;epochs&#39;</span><span class="p">]</span>
+    <span class="n">augment</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;augment&#39;</span><span class="p">]</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Set global keras seed</span>
+    <span class="n">k</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="n">hp</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">])</span> 
+
+    <span class="c1"># Load training/validation</span>
+    <span class="n">spins_file</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">/</span><span class="s2">&quot;data&quot;</span><span class="o">/</span><span class="n">data_dir</span><span class="o">/</span><span class="s2">&quot;lattice_samples.bin&quot;</span>
+    <span class="n">betas_file</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">/</span><span class="s2">&quot;data&quot;</span><span class="o">/</span><span class="n">data_dir</span><span class="o">/</span><span class="s2">&quot;beta_labels.bin&quot;</span>
+    
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">IsingDataLoader</span><span class="p">(</span><span class="n">spins_file</span><span class="p">,</span> <span class="n">betas_file</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+    <span class="n">train_data</span><span class="p">,</span> <span class="n">val_data</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">get_training_data</span><span class="p">(</span><span class="n">split_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="n">augment</span><span class="p">)</span>
+    
+    <span class="c1"># Load and compile model</span>
+    <span class="n">cvae</span> <span class="o">=</span> <span class="n">CVAE</span><span class="p">(</span><span class="n">hp</span><span class="p">)</span>
+    <span class="n">cvae</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span> <span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="p">),</span> <span class="n">jit_compile</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+
+    <span class="c1"># Apply callbacks</span>
+    <span class="n">callbacks</span> <span class="o">=</span> <span class="n">build_callbacks</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">results_dir</span><span class="p">)</span>
+
+    <span class="c1"># Run model training</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">cvae</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">train_data</span><span class="p">,</span>
+        <span class="n">validation_data</span><span class="o">=</span><span class="n">val_data</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+        <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span> <span class="p">)</span>
+    
+    <span class="c1"># Save model</span>
+    <span class="n">cvae</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">results_dir</span><span class="o">/</span><span class="sa">f</span><span class="s2">&quot;cvae.keras&quot;</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Saved to: </span><span class="si">{</span><span class="n">results_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Save results path for easy makefile reading</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;.latest_run.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">results_dir</span><span class="p">))</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, John Smith.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

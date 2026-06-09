@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 import keras as k
-from keras.optimizers import Adam, AdamW
+from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, CSVLogger
 
 from mylib.dataloader import IsingDataLoader
@@ -174,7 +174,6 @@ def main():
     # Unpack model, trainig and scheduler parameters
     hp = config['hyperparams']
     tp = config['train_params']
-    sp = config['schedule_params']
     
     L = hp['L']   
     N = tp['N']

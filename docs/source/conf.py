@@ -8,7 +8,7 @@
 
 import os, sys
 
-# 1. FORCE CPU AND SILENCE TENSORFLOW BEFORE ANYTHING LOADS
+# Force CPU and silence Tensorflow before anything loads to avoid warnings
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 os.environ["SPHINX_BUILD"] = "1"
@@ -27,8 +27,8 @@ release = '1.0'
 
 extensions = [  'sphinx.ext.autodoc',    # Extracts docstrings automatically
                 'sphinx.ext.napoleon',   # Supports Google and NumPy style docstrings
-                'sphinx.ext.viewcode',   # Optional: add links to source code in generated docs
-                'sphinx.ext.mathjax', #
+                'sphinx.ext.viewcode',   # Add links to source code in generated docs
+                'sphinx.ext.mathjax',    # Renders Latex equations
     ]
 
 templates_path = ['_templates']

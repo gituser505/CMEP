@@ -1,16 +1,15 @@
 import numba
 import numpy as np
-from scipy.stats import moment
 import matplotlib.pyplot as plt
 
 
 @numba.njit(parallel=True)
 def jackknife_samples(data):
-    """Generates jackknife samples for mean, variance, and Binder cumulant.
+    """Generates jackknife samples for mean and variance.
 
     This function calculates the "leave-one-out" jackknife estimates for the 
-    first, second, and fourth moments of a given dataset, which are then used 
-    to calculate the sample mean, variance, and Binder cumulant.
+    first and second moments of a given dataset, which are then used to calculate 
+    the sample mean and variance.
 
     Args:
         data (numpy.ndarray): 1D array of observable data (e.g., magnetization or energy).
@@ -40,7 +39,7 @@ def jackknife_samples(data):
 
 
 def jackknife(data):
-    """Calculates the standard error of observables using Jackknife resampling.
+    r"""Calculates the standard error of observables using Jackknife resampling.
 
     The standard error is computed using the jackknife variance formula:
     $\epsilon = \sqrt{(n-1) \text{Var}(\text{samples})}$.
@@ -76,7 +75,7 @@ def magnetization(spins):
 
 
 def energy(spins, J=1.0):
-    """Calculates the energy per spin of a 2D square Ising lattice.
+    r"""Calculates the energy per spin of a 2D square Ising lattice.
 
     Computes the standard nearest-neighbor Ising Hamiltonian with periodic 
     boundary conditions: 
@@ -118,7 +117,7 @@ def get_observable_arrays(spins, betas):
 
 
 def get_observables(M_arrays, E_arrays, L):
-    """Computes thermodynamic observables and their jackknife errors.
+    r"""Computes thermodynamic observables and their jackknife errors.
 
     Calculates the mean and error for Magnetization (M), Energy (E), 
     Magnetic Susceptibility ($\chi$), Specific Heat (C), and Binder Cumulant (bc).
@@ -229,7 +228,7 @@ if __name__ == '__main__':
     import json
     from pathlib import Path
     from sklearn.model_selection import train_test_split
-    from dataloader import IsingDataLoader
+    from mylib.dataloader import IsingDataLoader
 
     ROOT = Path(__file__).parent.parent.parent
 

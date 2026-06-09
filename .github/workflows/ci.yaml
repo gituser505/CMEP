@@ -1,0 +1,35 @@
+name: Project CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-code:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Project Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt 
+    
+    - name: Run Static Analysis (Pylint)
+      run: make lint
+
+    - name: Run Unit Tests (Pytest)
+      run: make test
+
+    - name: Run Doc Validation (Sphinx)
+      run: make docs_ci

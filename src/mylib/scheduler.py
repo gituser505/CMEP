@@ -1,5 +1,6 @@
 from keras.callbacks import Callback
 
+"""
 class KLAnnealing(Callback):
     def __init__(self, kl_weight, warmup, rampup):
         super().__init__()
@@ -14,8 +15,8 @@ class KLAnnealing(Callback):
             new_weight = min(1.0, (epoch - self.warmup + 1) / self.rampup)
         self.kl_weight.assign(new_weight)
         print(f"KL weight = {new_weight:.3f}")
-
-
+"""
+"""
 class KLAnnealingCapacity(Callback):
     def __init__(self, capacity, max_capacity, warmup, rampup):
         super().__init__()
@@ -32,7 +33,7 @@ class KLAnnealingCapacity(Callback):
             new_capacity = progress * self.kl_max_capacity
         self.kl_capacity.assign(new_capacity)
         print(f"KL capacity (c) = {new_capacity:.3f}")
-
+"""
 
 class GumbelScheduler(Callback):
     """Anneals the temperature parameter (tau) for a Gumbel-Softmax distribution.

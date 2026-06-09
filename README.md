@@ -8,7 +8,7 @@ This project uses **Keras** and **TensorFlow** to implement a generative model t
 
 ## Tech Stack
 - **Python 3.x**
-- **Keras 3.x / Tensorflow 2.8.x** (Backend)
+- **Keras 3.x / Tensorflow 2.20.x** (Backend)
 - **NumPy & Matplotlib** (Data processing and visualization)
 - Ising model souce code in C (Used for initial data generation)
 
@@ -25,9 +25,9 @@ This project uses **Keras** and **TensorFlow** to implement a generative model t
    `pip install -r requirements.txt`
 
 ## Usage
-1. **Generate Data:** Run `make` in the data directory to create the training lattices via the Wolff algorithm.
-2. **Train:** Run `python3 train.py --config config.json` in src directory to train the model with the custom configuration file.
-3. **Tune:** Run `python3 tune.py --config config.json` in src directory for hyperparameter tuning with custom configuration file.
-4. **Inference:** Run `python3 analysis.py` in src to produce graphs of the model behaviour.
+1. **Generate Data:** Run `make` in the ising directory to create the training lattices via the Wolff algorithm. All data is saved in the data directory.
+2. **Train:** Run `python3 train.py --config config.json` in src directory to train the model with the custom configuration file saved in the config directory.
+3. **Tune:** Run `python3 tune.py --config config.json` in src directory for hyperparameter tuning with custom configuration file saved in the config directory.
+4. **Inference:** Run `python3 analysis.py --dir "results path"` in src to produce graphs of the model behaviour. Path of the results saved in the results directory
 
-To run the whole pipeline together (except data generation), run `make` in the root CEMP directory.
+5. To run the whole pipeline together (except data generation), run `make` in the root CEMP directory.
