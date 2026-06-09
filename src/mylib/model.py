@@ -48,8 +48,8 @@ class CVAE(Model):
                 metrics.Mean(name="m_loss"),
                 metrics.Mean(name="e_loss")])
             
-        if self.use_gumbel:
-            self.tau = k.Variable(1.0, trainable=False, dtype="float32")
+            if self.use_gumbel:
+                self.tau = k.Variable(1.0, trainable=False, dtype="float32")
 
 
     def _build_encoder(self):
@@ -177,7 +177,7 @@ class CVAE(Model):
         return self.metric_updates(losses_list)
 
     def compute_losses(self, inputs, outputs):
-        """Computes all standard and physical loss components.
+        r"""Computes all standard and physical loss components.
 
         Calculates the Binary Cross-Entropy reconstruction loss and the Kullback-Leibler 
         divergence. If `use_physics_loss` is enabled, it computes differences in energy 
@@ -256,7 +256,7 @@ class CVAE(Model):
         return ops.abs(2.0*M - 1.0)
 
     def energy(self, spins, J=1.0):
-        """Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with
+        r"""Calcualtes the nearest-neighbor Ising Hamiltonian for a spin lattice with
         periodic boundary coditions.
 
         $E = -J \sum_{\langle i, j \rangle} s_i s_j$ 
@@ -288,7 +288,7 @@ class CVAE(Model):
         return ops.mean(ops.abs(input - output))
 
     def mmd1(self, z, z_prior, sigmas=[1.0, 2.0, 5.0, 10.0]):
-        """Computes the Maximum Mean Discrepancy (MMD) using multiple RBF kernels for 2D vectors.
+        r"""Computes the Maximum Mean Discrepancy (MMD) using multiple RBF kernels for 2D vectors.
 
         MMD quantifies the distance between two distributions defined by a combination 
         of Gaussian kernels $k(x, y) = \exp(-\gamma ||x - y||^2)$.

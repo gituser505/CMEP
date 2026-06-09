@@ -1,4 +1,6 @@
 import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 import pytest
 import numpy as np
 import tensorflow as tf
@@ -10,7 +12,7 @@ from mylib.model import CVAE
 
 @pytest.fixture
 def base_hparams():
-    """Provides a small set of hyperparameters for fast testing.
+    """A small set of hyperparameters for fast testing.
     """
     return {
         "L": 4,
@@ -36,9 +38,15 @@ def test_model_fit_and_serialization(base_hparams, tmp_path):
     N = 4
     hparams = base_hparams
     
-    # Initialize and compile
+    # Initantiaiton check
     cvae = CVAE(hparams)
+    assert cvae is not None, "Model failed to instantiate (returned None)"
+    assert isinstance(cvae, k.Model), "Model is not a valid Keras Model instance"
+
+    # Compile check
     cvae.compile(optimizer=optimizers.Adam(0.001), jit_compile=True)
+    assert cvae.compiled is True, "Model compile flag was not set to True"
+    assert cvae.optimizer is not None, "Model failed to bind the optimizer"
     
     # Create dummy inputs
     spins = np.random.uniform(0, 1, (N, hparams["L"], hparams["L"], 1)).astype(np.float32)
@@ -55,8 +63,14 @@ def test_model_fit_and_serialization(base_hparams, tmp_path):
     # Save and reload using the tmp_path fixture
     model_path = tmp_path / "test_cvae.keras"
     cvae.save(str(model_path))
-    
     loaded_cvae = k.models.load_model(str(model_path))
+
+    # Deserialization tests
+    assert loaded_cvae is not None, "k.models.load_model returned None"
+    assert isinstance(loaded_cvae, k.Model), "Loaded object is not a valid Keras Model"
+    assert loaded_cvae.built is True, "Loaded model lost its structural layout (built state)"
+    assert loaded_cvae.compiled is True, "Loaded model dropped its optimizer or training configurations"
+
     output_loaded = loaded_cvae([spins, betas], training=False)
     
     # Check that saved and loaded predictions match
@@ -76,11 +90,11 @@ def test_physics_observables(base_hparams):
     
     # Magnetization = 1.0
     mag_up = cvae.magnetization(spins_up)
-    np.testing.assert_array_almost_equal(mag_up.numpy(), [1.0])
+    np.testing.assert_array_almost_equal(mag_up.numpy(), [[1.0]])
     
     # Energy density = -2.0
     energy_up = cvae.energy(spins_up, J=1.0)
-    np.testing.assert_array_almost_equal(energy_up.numpy(), [-2.0])
+    np.testing.assert_array_almost_equal(energy_up.numpy(), [[-2.0]])
 
     # Perfect thermal state (alternating 0 and 1)
     checkerboard = np.indices((L, L)).sum(axis=0) % 2
@@ -89,16 +103,16 @@ def test_physics_observables(base_hparams):
     
     # Magnetization = 0.0
     mag_check = cvae.magnetization(checkerboard)
-    np.testing.assert_array_almost_equal(mag_check.numpy(), [0.0])
+    np.testing.assert_array_almost_equal(mag_check.numpy(), [[0.0]])
     
     # Energy = 2.0
     energy_check = cvae.energy(checkerboard, J=1.0)
-    np.testing.assert_array_almost_equal(energy_check.numpy(), [2.0])
+    np.testing.assert_array_almost_equal(energy_check.numpy(), [[2.0]])
 
 
 @pytest.mark.parametrize("stochastic_mode", [True, False])
 def test_generation_outputs(base_hparams, stochastic_mode):
-    """Test if generation logic outputs correct shapes, types, and binary domains.
+    """Test if generation outputs correct shapes, types, and binary domains.
     """
     L = base_hparams['L']
     cvae = CVAE(base_hparams)

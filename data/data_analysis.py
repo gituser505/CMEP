@@ -28,16 +28,14 @@ datasets = [
     (beta, M, M_err),
     (beta, E, E_err),
     (beta, chi, chi_err),
-    (beta, C, C_err),
-    (beta, bc, bc_err) ]
+    (beta, C, C_err) ]
 
 configs = [
     ("Correlation", r"$\tau$", (0, 1), r"$\beta$", (0, 0.9)),
     ("Magnetization", r"$|M|$", (0, 1.1), r"$\beta$", (0, 0.9)),
     ("Energy", r"$E$", (-2.1, 0), r"$\beta$", (0, 0.9)),
     ("Susceptibility", r"$\chi$", (0, 20), r"$\beta$", (0, 0.9)),
-    ("Specific heat", r"$C$", (0, 3), r"$\beta$", (0, 0.9)),
-    ("Binder cumulant", r"$U_L$", (0, 1), r"$\beta$", (0, 0.9)) ]
+    ("Specific heat", r"$C$", (0, 3), r"$\beta$", (0, 0.9)) ]
 
 for (x,y,yerr), (title, ylabel, ylim, xlabel, xlim) in zip(datasets, configs):
     fig, ax = plt.subplots(figsize=(8, 6))

@@ -1,3 +1,6 @@
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 import pytest
 import numpy as np
 import tensorflow as tf
@@ -54,7 +57,7 @@ def test_normalize_array():
     np.testing.assert_array_almost_equal(normalized, [0.0, 0.5, 1.0])
 
 
-def test_standard_training_data_shapes(dummy_binary_data):
+def test_get_training_data_shapes(dummy_binary_data):
     """Test if tf.data.Dataset batches have the correct shapes and types.
     """
     spins_file, betas_file, _, _, L, N = dummy_binary_data
@@ -66,7 +69,7 @@ def test_standard_training_data_shapes(dummy_binary_data):
     # Take one batch
     for spins_batch, betas_batch in train_data.take(1):
         assert spins_batch.shape == (batch_size, L, L, 1)
-        assert betas_batch.shape == (batch_size,)
+        assert betas_batch.shape == (batch_size, 1)
         assert spins_batch.dtype == tf.float32
         assert betas_batch.dtype == tf.float32
 
@@ -80,6 +83,8 @@ def test_homogeneous_batching(dummy_binary_data):
     loader = IsingDataLoader(spins_file, betas_file, L, N)
     train_data, _ = loader.get_training_data_homogeneous(split_ratio=0.8, batch_size=batch_size)
     
-    for _, betas_batch in train_data.take(3):
+    for spins_batch, betas_batch in train_data.take(3):
+        assert spins_batch.shape == (batch_size, L, L, 1)
+        assert betas_batch.shape == (batch_size, 1)
         unique_betas = np.unique(betas_batch.numpy())
         assert len(unique_betas) == 1, f"Found mixed betas in a homogeneous batch: {unique_betas}"

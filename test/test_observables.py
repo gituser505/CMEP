@@ -13,7 +13,7 @@ from mylib.observables import (
 
 
 def test_magnetization_boundary_states():
-    """Test if  magnetization = 1.0/0.0 for magnetized/thermal states.
+    """Test if magnetization = 1.0/0.0 for magnetized/thermal states.
     """
     L = 4
     spins_up = np.ones((2, L, L), dtype=np.int8)

@@ -122,16 +122,28 @@ int main( void ) {
     int sokal_c = 5;
 
     int trial = 1;    
-    char path[128];
-    char mkdir_cmd[256];
-    char *root = "/../data";
-    while (1) {
-        snprintf(path, sizeof(path), "%s/ising_%d_%d_%d/", root, L, N*nbetas, nbetas);
-        if (access(path, F_OK) != 0) break;
+    char path[512];
+    char mkdir_cmd[1024];
+    char *root = "../data";
+
+    snprintf(path, sizeof(path), "%s/ising_%d_%d_%d/", root, L, N*nbetas, nbetas);
+    
+    while (access(path, F_OK) == 0) {
+        snprintf(path, sizeof(path), "%s/ising_%d_%d_%d_v%d/", root, L, N*nbetas, nbetas, trial);
+        trial++;
     }
+    
     snprintf(mkdir_cmd, sizeof(mkdir_cmd), "mkdir -p %s", path);
     int err = system(mkdir_cmd);
-    if ( err==0 ) printf("Created directory: %s\n", path);
+    
+    if ( err==0 ) {
+        printf("Created directory: %s\n", path);
+    }
+    else {
+        fprintf(stderr, "Error: Failed to create directory %s\n", path);
+        free(betas);
+        return 1;
+    }
 
     Config *config = get_config(L, J, h, beta, "random", N, burnin, decorr, (uint32_t)42);
     Exp *exp = init_experiment(config, nthreads, betas, nbetas, sokal_c, path);

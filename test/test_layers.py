@@ -8,18 +8,18 @@ from mylib.layers import PeriodicPadding2D, Sampling, FiLMLayer
 def test_periodic_padding_shape_and_values():
     """Test if PeriodicPadding2D can correctly pad the shapes and wrap the edges for an Ising lattice.
     """
-    # Create 4x4 lattice with top row = 1s and bottom = 0s
+    # 4x4 lattice with top row = 1s and bottom = 0s
     x = np.zeros((1, 4, 4, 1), dtype=np.float32)
     x[0, 0, :, 0] = 1.0  # Top row
     
-    # Using kernel_size=3 and stride=1 requires 1 pixel of padding on each side
+    # kernel_size=3 and stride=1 requires 1 pixel of padding on each side
     padding_layer = PeriodicPadding2D(kernel_size=3, strides=1)
     padded_x = padding_layer(x)
     
     # 4x4 should become 6x6
     assert padded_x.shape == (1, 6, 6, 1)
     
-    # 2. Check periodic logic: The bottom padding row (index 5) should copy the top row (all 1s)
+    # Check periodicity: the bottom padding row (index 5) should copy the top row (all 1s)
     bottom_pad_row = padded_x[0, 5, 1:5, 0]
     np.testing.assert_array_equal(bottom_pad_row, np.ones(4))
 
