@@ -21,20 +21,26 @@ ROOT = Path(__file__).parent.parent
 
 
 def norm_array(x):
-    """
-    Normalize a numpy array to the range [0, 1].
-    
-    :param x: array
+    """Normalizes a numpy array to the range [0, 1].
+
+    Args:
+        x (numpy.ndarray): The input array to be normalized.
+
+    Returns:
+        numpy.ndarray: The normalized array with values scaled between 0 and 1.
     """
     min, max = x.min(), x.max()
     return (x-min)/(max-min)
 
 
 def load_config(config_path):
-    """
-    Load the model and training configuration json file.
+    """Loads the model and training configuration from a JSON file.
 
-    :param config_path: file path of the json file
+    Args:
+        config_path (str or pathlib.Path): The file path to the JSON configuration file.
+
+    Returns:
+        dict: A dictionary containing the parsed configuration parameters.
     """
     with open(config_path, 'r') as f:
         config = json.load(f)
@@ -42,7 +48,14 @@ def load_config(config_path):
 
 
 def plot_training_losses(history, path):
-    """Generate and save training vs validation loss curves.
+    """Generates and saves training versus validation loss curves.
+
+    Extracts all tracking metrics from the history DataFrame and plots 
+    the training and validation values vs. epochs.
+
+    Args:
+        history (pandas.DataFrame): A DataFrame containing the training history metrics.
+        path (pathlib.Path): The directory path where the loss plots will be saved.
     """
     losses = [col for col in history.columns if not col.startswith('val_') and col not in ['epoch', 'learning_rate']]
     for loss in losses:
@@ -61,14 +74,22 @@ def plot_training_losses(history, path):
 
 
 def plot_observables(betas, obs_ising, obs_cvae, path):
-    """Compare physical observables (Magnetization, Energy, etc.) between Ising and CVAE.
+    """Compares physical observables between the reference Ising model and the CVAE.
+
+    Plots Magnetization, Energy, Susceptibility and Specific Heat as a function of the 
+    inverse temperature (beta) and saves the figures.
+
+    Args:
+        betas (numpy.ndarray): Array of unique inverse temperatures.
+        obs_ising (dict): Dictionary containing reference observables ('val' and 'err') for the Ising model.
+        obs_cvae (dict): Dictionary containing generated observables ('val' and 'err') for the CVAE model.
+        path (pathlib.Path): The directory path where the observable plots will be saved.
     """
     configs = [
         ("Magnetization", r"$|M|$", (0, 1.1), r"$\beta$", (0, 0.9)),
         ("Energy", r"$E$", (-2.1, 0), r"$\beta$", (0, 0.9)),
         ("Susceptibility", r"$\chi$", (0, 20), r"$\beta$", (0, 0.9)),
-        ("Specific heat", r"$C$", (0, 2), r"$\beta$", (0, 0.9)),
-        ("Binder cumulant", r"$U_L$", (0, 1), r"$\beta$", (0, 0.9))
+        ("Specific heat", r"$C$", (0, 2), r"$\beta$", (0, 0.9))
         ]
     for name, (title, ylabel, ylim, xlabel, xlim) in zip(obs_ising, configs):
         fig, ax = plt.subplots(figsize=(8, 6), layout="constrained")
@@ -86,9 +107,18 @@ def plot_observables(betas, obs_ising, obs_cvae, path):
 
 
 def plot_histograms(M_ising, E_ising, M_cvae, E_cvae, path, betas=[0.2, 0.44, 0.7]): 
-    """
-    Compare physical observables distributions (Magnetization, Energy) between Ising and CVAE
-    for selected (inverse) temperatures.
+    """Compares physical observable distributions for selected inverse temperatures.
+
+    Generates overlapping histograms of Magnetization and Energy for both the reference 
+    Ising data and the CVAE generated data.
+
+    Args:
+        M_ising (dict): Dictionary mapping beta values to reference Ising magnetization arrays.
+        E_ising (dict): Dictionary mapping beta values to reference Ising energy arrays.
+        M_cvae (dict): Dictionary mapping beta values to CVAE generated magnetization arrays.
+        E_cvae (dict): Dictionary mapping beta values to CVAE generated energy arrays.
+        path (pathlib.Path): The directory path where the histogram plots will be saved.
+        betas (list of float, optional): List of beta values to plot. Defaults to [0.2, 0.44, 0.7].
     """
     fig, axes = plt.subplots(2, 3, figsize=(18, 10), layout="constrained")
 
@@ -130,8 +160,18 @@ def plot_histograms(M_ising, E_ising, M_cvae, E_cvae, path, betas=[0.2, 0.44, 0.
 
 
 def plot_latent_space(z_pca, var_ratios, betas_pca, M_pca, E_pca, path):
-    """
-    Docstring for plot_latent_space
+    """Visualizes the PCA-reduced latent space of the CVAE.
+
+    Generates scatter plots of the first two principal components colored by 
+    beta, magnetization, and energy, alongside a cumulative variance plot.
+
+    Args:
+        z_pca (numpy.ndarray): The PCA-transformed latent space coordinates.
+        var_ratios (numpy.ndarray): The explained variance ratios for each principal component.
+        betas_pca (numpy.ndarray): Array of beta values corresponding to the PCA samples.
+        M_pca (numpy.ndarray): Array of magnetization values corresponding to the PCA samples.
+        E_pca (numpy.ndarray): Array of energy values corresponding to the PCA samples.
+        path (pathlib.Path): The directory path where the PCA plots will be saved.
     """    
     # PCA colored by beta
     fig, ax = plt.subplots(figsize=(8, 6), layout="constrained")
@@ -186,12 +226,18 @@ def plot_latent_space(z_pca, var_ratios, betas_pca, M_pca, E_pca, path):
 
 
 def plot_reconstructions(cvae, spins, betas, betas_norm, path, betas_to_plot=[0.2, 0.44, 0.7]):  
-    """
-    Comparison of the raw binary input lattice, the reconstructed (float) output and generated samples,
-    showing both the threshold and stochastic sampling for the generative and preditive outputs 
-    
-    :param betas: Description
-    :param betas_to_plot: Description
+    """Compares input lattices with CVAE reconstructed and generated samples.
+
+    Visualizes a grid comparing raw binary input, floating-point reconstructions, 
+    thresholded reconstructions, stochastic reconstructions, and purely generated samples.
+
+    Args:
+        cvae (keras.Model): The trained Conditional Variational Autoencoder model.
+        spins (numpy.ndarray): The raw ground-truth spin lattices.
+        betas (numpy.ndarray): The raw beta labels.
+        betas_norm (numpy.ndarray): The normalized beta labels.
+        path (pathlib.Path): The directory path where the reconstruction plots will be saved.
+        betas_to_plot (list of float, optional): Target beta values to extract and plot. Defaults to [0.2, 0.44, 0.7].
     """
     titles = ["Input", "Recon", "Recon (threshold)", "Recon (stochastic)", "Generated (threshold)", "Generated (stochastic)"]
 
@@ -232,8 +278,15 @@ def plot_reconstructions(cvae, spins, betas, betas_norm, path, betas_to_plot=[0.
 
 
 def plot_generated_samples(cvae, betas, betas_norm, num_lattices, path, betas_to_plot=[0.2, 0.44, 0.7]):
-    """
-    Generated sample list
+    """Generates and plots a grid of stochastically generated lattices from the CVAE.
+
+    Args:
+        cvae (keras.Model): The trained Conditional Variational Autoencoder model.
+        betas (numpy.ndarray): The raw beta labels used for masking/filtering.
+        betas_norm (numpy.ndarray): The normalized beta labels used to condition the generator.
+        num_lattices (int): The number of independent samples to generate per beta value.
+        path (pathlib.Path): The directory path where the generated samples plot will be saved.
+        betas_to_plot (list of float, optional): Target beta values to condition generation on. Defaults to [0.2, 0.44, 0.7].
     """
     fig, axes = plt.subplots(len(betas_to_plot), num_lattices, figsize=(18, 5), layout="constrained")
 
@@ -269,7 +322,11 @@ def plot_generated_samples(cvae, betas, betas_norm, num_lattices, path, betas_to
 
 
 def main():
-    """Main function for CVAE analysis.
+    """Main execution function for the CVAE analysis script.
+
+    Parses command-line arguments to locate the trained model directory, loads 
+    the configuration and data, computes physical observables, evaluates the latent 
+    space via PCA, and generates a suite of diagnostic plots.
     """
     parser = argparse.ArgumentParser(description='Analyse trained CVAE model')
     parser.add_argument('--dir', type=str, required=True, help='model directory (e.g. results/exp_...)')
@@ -301,7 +358,7 @@ def main():
     obs_ising = get_observables(M_ising, E_ising, L)
 
     # Load model and history
-    cvae = load_model(results_dir/"cvae.keras")
+    cvae = load_model(results_dir/"cvae.keras", custom_objects={"projectlib>CVAE": CVAE})
     history = pd.read_csv(results_dir/"history.csv")
 
     # Get CVAE generated output and observables

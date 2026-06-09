@@ -13,8 +13,8 @@ from keras.optimizers import Adam, AdamW
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, CSVLogger
 
 from mylib.dataloader import IsingDataLoader
-from mylib.model_padded import CVAE
-from mylib.schedulers import PhysicsScheduler, GumbelScheduler
+from mylib.model import CVAE
+from mylib.scheduler import PhysicalLossScheduler, GumbelScheduler
 
 ROOT = Path(__file__).parent.parent
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     # Add scheduler
     if use_physics_loss == True:
-        callbacks.append(PhysicsScheduler(hp, sp))
+        callbacks.append(PhysicalLossScheduler(hp, sp))
     if use_gumbel == True:
         callbacks.append(GumbelScheduler(sp))
     

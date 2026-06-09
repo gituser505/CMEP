@@ -13,8 +13,8 @@ from keras.models import load_model
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 
-from mylib.dataloader import IsingDataLoader
 from mylib.model import CVAE
+from mylib.dataloader import IsingDataLoader
 from mylib.observables import *
 
 ROOT = Path(__file__).parent.parent
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     obs_ising = get_observables(M_ising, E_ising, L)
 
     # Load model
-    cvae = load_model(results_dir/"cvae.keras")
+    cvae = load_model(results_dir/"cvae.keras", custom_objects={"projectlib>CVAE": CVAE})
 
     # Get CVAE generated output and observables
     batch_size = 5000

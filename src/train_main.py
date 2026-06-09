@@ -13,17 +13,20 @@ from keras.optimizers import Adam, AdamW
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, CSVLogger
 
 from mylib.dataloader import IsingDataLoader
-from mylib.model_padded import CVAE
-from mylib.schedulers import PhysicsScheduler, GumbelScheduler
+from mylib.model import CVAE
+from mylib.scheduler import PhysicalLossScheduler, GumbelScheduler
 
 ROOT = Path(__file__).parent.parent
 
 
 def load_config(config_path):
-    """
-    Docstring for load_config
-    
-    :param config_path: Description
+    """Loads the model and training configuration parameters from a JSON file.
+
+    Args:
+        config_path (str or pathlib.Path): The path to the target JSON configuration file.
+
+    Returns:
+        dict: A dictionary containing parsed configuration and hyperparameter blocks.
     """
     with open(config_path, 'r') as f:
         config = json.load(f)
@@ -31,18 +34,32 @@ def load_config(config_path):
 
 
 def save_config(config, path):
-    """
-    Docstring for save_config
-    
-    :param config: Description
-    :param path: Description
+    """Saves the current configuration dictionary as an organized JSON file.
+
+    Maintains reproducibility by archiving an exact copy of the configuration 
+    settings inside the newly generated experiment results folder.
+
+    Args:
+        config (dict): The configuration dictionary to be archived.
+        path (pathlib.Path): The target directory where 'config.json' will be written.
     """
     with open(path/"config.json", 'w') as f:
         json.dump(config, f, indent=2)
 
 
 def build_results_dir(config):
-    """Build results directory per traning experiment
+    """Builds a uniquely named experiment results directory with a timestamp.
+
+    Extracts crucial hyperparameters (latent dimensions, filters, batch size, alpha)
+    and constructs a descriptive path string, appending physics loss constraints
+    if active. Automatically handles the parent directory creation.
+
+    Args:
+        config (dict): The full configuration dictionary containing 'hyperparams' 
+            and 'train_params' blocks.
+
+    Returns:
+        pathlib.Path: A Path object pointing to the newly initialized directory.
     """  
     hp = config['hyperparams']
     tp = config['train_params']
@@ -72,11 +89,20 @@ def build_results_dir(config):
 
 
 def build_callbacks(config, results_dir):
-    """
-    Docstring for build_callbacks
-    
-    :param config: Description
-    :param results_dir: Description
+    """Assembles the standard and custom Keras training callbacks.
+
+    Sets up structural training components including early stopping criteria, 
+    learning rate decay on plateaus, checkpoint monitoring for validation loss, 
+    and CSV logging. Dynamically appends scheduling callbacks for physics and 
+    Gumbel constraints if toggled in hyperparameters.
+
+    Args:
+        config (dict): The complete configuration parameter dictionary.
+        results_dir (pathlib.Path): The destination directory path where checkpoints 
+            and loss history logs will be saved.
+
+    Returns:
+        list: A list populated with configured Keras callback objects.
     """
     # Unpack model, trainig and scheduler parameters
     hp = config['hyperparams']
@@ -120,7 +146,7 @@ def build_callbacks(config, results_dir):
 
     # Add scheduler
     if use_physics_loss == True:
-        callbacks.append(PhysicsScheduler(hp, sp))
+        callbacks.append(PhysicalLossScheduler(hp, sp))
         if use_gumbel == True:
             callbacks.append(GumbelScheduler(sp))
     
@@ -128,8 +154,12 @@ def build_callbacks(config, results_dir):
 
 
 def main():
-    """
-    Docstring for main
+    """Main execution function to initialize and run CVAE model training.
+
+    Parses configuration inputs, configures deterministic global seeds, loads 
+    Ising model binary datasets, instantiates the CVAE architecture, builds the 
+    callback routine array, executes the training fit process, and logs the latest 
+    valid run path tracking token.
     """
     parser = argparse.ArgumentParser(description='Train CVAE model')
     parser.add_argument('--config', required=True, help='Name of JSON file')

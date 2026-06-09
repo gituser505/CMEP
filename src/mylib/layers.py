@@ -128,7 +128,7 @@ class FiLMLayer(layers.Layer):
             of the conditioning MLP. Defaults to 32.
         **kwargs: Additional keyword arguments passed to the base Layer class.
     """
-    def __init__(self, filters, hidden_units=64, **kwargs):
+    def __init__(self, filters, hidden_units=32, **kwargs):
         super().__init__(**kwargs)
         self.filters = filters
         self.hidden_units = hidden_units
