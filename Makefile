@@ -6,10 +6,10 @@ BEST_CONFIG = best_config.json
 .PHONY: all clean lint test tune train-best train analyze docs docs_ci build
 
 # 'all' runs the entire pipeline sequentially
-all: clean lint test docs train analyze
+all: clean install lint test docs train analyze
 
 # 'build' runs the pipleine to do local setup
-build: clean lint test docs
+build: clean install lint test docs
 
 # 'run' assuming build run the core code
 run: train analyze
@@ -23,6 +23,11 @@ clean:
 	rm -rf .pytest_cache
 	rm -rf docs/build/*
 	rm -f .latest_run.txt .latest_tune.txt
+
+install:
+	@echo "Upgrading pip and installing dependencies from requirements.txt..."
+	python -m pip install --upgrade pip
+	pip install -r requirements.txt
 
 lint:
 	@echo "Running static analysis with pylint..."

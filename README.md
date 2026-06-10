@@ -22,12 +22,28 @@ This project uses **Keras** and **TensorFlow** to implement a generative model t
 1. Clone the repo:
    `git clone https://github.com/user505/CMEP`
 2. Install dependencies:
-   `pip install -r requirements.txt`
+   `pip install -r requirements.txt` 
 
-## Usage
-1. **Generate Data:** Run `make` in the ising directory to create the training lattices via the Wolff algorithm. All data is saved in the data directory.
-2. **Train:** Run `python3 train.py --config config.json` in src directory to train the model with the custom configuration file saved in the config directory.
-3. **Tune:** Run `python3 tune.py --config config.json` in src directory for hyperparameter tuning with custom configuration file saved in the config directory.
-4. **Inference:** Run `python3 analysis.py --dir "results path"` in src to produce graphs of the model behaviour. Path of the results saved in the results directory
+## Source code
+1. **Generate Data:** `make` in the ising directory to create the training lattices via the Wolff algorithm. All data is saved in the data directory.
+2. **Train:** `python3 train.py --config config.json` in src directory to train the model with the custom configuration file saved in the config directory.
+3. **Tune:** `python3 tune.py --config config.json` in src directory for hyperparameter tuning with custom configuration file saved in the config directory.
+4. **Inference:** `python3 analysis.py --dir "results path"` in src to produce graphs of the model behaviour. Path of the results saved in the results directory.
 
-5. To run the whole pipeline together (except data generation), run `make` in the root CEMP directory.
+## Make commands
+To run the pipelines together (except data generation), run `make` in the root CEMP director along with the appropriate flag:
+1. `make clean` to clean the caches, old documentation and temp files.
+2. `make install` to install the project libraries and dependencies.
+3. `make lint` to run pylint static analysis.
+4. `make test` to run pytest unit tests.
+5. `make tune` to run tune.py code for model hyperparameter tuning.
+6. `make train-best` to run train.py with optimal configuration.
+7. `make train` to run the train.py for model training.
+8. `make analyze` to get graphical summary and diagnostics of model performance.
+9. `make docs` to run sphinx's make html to generate documentation locally.
+10. `make docs-ci` to run shphinx for the CI readthedocs.com generated documentation.
+
+11. `make` for full pipeline: clean, install, lint, test, docs, train, analyze.
+12. `make build` for clean, install, lint, test, docs
+13. `make run` for train, analyze
+14. `make tune-full` for tune, train-best, analyze
