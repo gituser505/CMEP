@@ -1,0 +1,94 @@
+{
+  "hyperparams": {
+    "L": 32,
+    "latent_dim": 32,
+    "mlp_units": [
+      256
+    ],
+    "enc_filters": [
+      32,
+      64,
+      128
+    ],
+    "dec_filters": [
+      128,
+      64,
+      32
+    ],
+    "strides": [
+      2,
+      2,
+      2
+    ],
+    "kernels": [
+      3,
+      3,
+      3
+    ],
+    "lrlu_slope": 0.2,
+    "alpha": 10,
+    "gamma": 1000.0,
+    "delta": 1000.0,
+    "seed": 42,
+    "use_physics_loss": true,
+    "use_gumbel": true
+  },
+  "train_params": {
+    "data_dir": "ising_32_130000_26_trial1",
+    "L": 32,
+    "N": 130000,
+    "split_ratio": 0.9,
+    "batch_size": 128,
+    "epochs": 100,
+    "learning_rate": 0.0001,
+    "min_delta": 0.1,
+    "patience": 100,
+    "augment": false,
+    "trials": 50
+  },
+  "schedule_params": {
+    "warmup": 0,
+    "rampup": 40,
+    "tau_init": 1.0,
+    "tau_min": 0.1,
+    "decay_rate": 0.95
+  },
+  "search_space": {
+    "alpha": {
+      "type": "float",
+      "low": 0.1,
+      "high": 10.0,
+      "log": true
+    },
+    "_gamma": {
+      "type": "float",
+      "low": 10,
+      "high": 1000.0,
+      "log": true
+    },
+    "_delta": {
+      "type": "float",
+      "low": 10,
+      "high": 1000.0,
+      "log": true
+    },
+    "_latent_dim_exp": {
+      "type": "int",
+      "low": 1,
+      "high": 8,
+      "log": false
+    },
+    "_mlp_units_exp": {
+      "type": "int",
+      "low": 1,
+      "high": 8,
+      "log": false
+    },
+    "learning_rate": {
+      "type": "float",
+      "low": 1e-06,
+      "high": 0.001,
+      "log": true
+    }
+  }
+}
